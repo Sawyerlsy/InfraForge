@@ -1,0 +1,27 @@
+# 单节点部署时将MODE=cluster改成standalone
+version: '3.8'
+services:
+  nacos1:
+    image: sawyerlsy/nacos:v2.2.3-local
+    container_name: nacos-node1
+    network_mode: host
+    environment:
+      - TZ=Asia/Shanghai  # 指定时区
+      - PREFER_HOST_MODE=ip
+      - MODE=cluster
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - DB_HOST=10.194.65.131
+      - DB_NAME=nacos2.2.3
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=hgrica1@
+      - NACOS_AUTH_ENABLE=true
+      - nacos.core.auth.plugin.nacos.token.secret.key=MjAyMzEwMjcsU2F3eWVyJ3MgbmFjb3Mga2V5IGZvciBoZ2l0cy5QbGVhc2Ugc2V0IGl0Lg==
+      - nacos.core.auth.server.identity.key=MjAyMzEwMjcsU2F3eWVyJ3MgbmFjb3Mga2V5IGZvciBoZ2l0cy5QbGVhc2Ugc2V0IGl0Lg==
+      - nacos.core.auth.server.identity.value=MjAyMzEwMjcsU2F3eWVyJ3MgbmFjb3Mga2V5IGZvciBoZ2l0cy5QbGVhc2Ugc2V0IGl0Lg==
+      - NACOS_SERVERS=10.194.65.133:8848,10.194.65.134:8848,10.194.65.135:8848  # 需要和NACOS_SERVER_IP保持一致
+      - NACOS_SERVER_IP=10.194.65.133
+      - NACOS_APPLICATION_PORT=8848
+    volumes:
+      - ./logs/nacos1:/home/nacos/logs
+    restart: always
