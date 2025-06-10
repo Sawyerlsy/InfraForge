@@ -1,0 +1,14 @@
+upstream  nacos_grpc {
+    server 10.194.65.133:9848;
+    server 10.194.65.134:9848;
+    server 10.194.65.135:9848;
+    least_conn;            # 将新请求分配给当前活跃连接数最少的后端服务器
+}
+
+# gRPC 流量代理（9848）
+server {
+    listen       9848 reuseport; #Nacos 2.x 使用 gRPC 长连接推送服务变更，reuseport 确保万级连接均匀分配至多 Worker
+    proxy_connect_timeout 10s;
+    proxy_timeout 30s;
+    proxy_pass nacos_grpc;
+}

@@ -1,0 +1,19 @@
+# ----------------------
+# MySQL双主集群
+# ----------------------
+upstream mysql_masters {
+    server 10.194.65.131:3307 max_fails=3 fail_timeout=30s;
+    #server 192.168.1.202:3307 max_fails=3 fail_timeout=30s;
+
+    # 基于源IP哈希保持会话一致性
+    hash $remote_addr consistent;
+}
+
+server {
+    listen 3306;
+    proxy_pass mysql_masters;
+    proxy_connect_timeout 5s;
+    proxy_timeout 20s;
+    proxy_buffer_size 16k;              # 优化数据库连接
+    access_log off;                   # 禁止记录敏感查询
+}
