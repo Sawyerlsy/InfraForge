@@ -1,0 +1,86 @@
+services:
+  minio:
+    image: minio/minio:RELEASE.2025-02-28T09-55-16Z  # 指定稳定版本
+    container_name: minio-prod
+    hostname: minio-node1
+    restart: unless-stopped  # 异常自动重启
+    privileged: true  # CentOS7 SELinux 兼容
+    networks:
+      - minio-net
+
+    # 端口映射
+    ports:
+      - "9000:9000"   # API 端口
+      - "9001:9001"   # 控制台端口
+      - "9002:9002"   # Prometheus 监控端口
+
+    # 环境变量优化
+    environment:
+      MINIO_ROOT_USER: "admin"  # 生产环境强密码
+      MINIO_ROOT_PASSWORD: "hgrica1@"
+      MINIO_COMPRESS: "on"          # 启用数据压缩
+      MINIO_COMPRESS_EXTENSIONS: ".txt,.log,.json,.csv"  # 压缩文件类型
+      MINIO_COMPRESS_MIME: "text/*,application/json,application/csv"  # MIME类型
+      MINIO_CACHE_SIZE: "4gb"       # 内存缓存（物理内存20%-30%）
+      MINIO_API_REQUESTS_MAX: "200"  # 最大并发请求数
+      MINIO_PROMETHEUS_AUTH_TYPE: "public"  # 开放监控端点
+      MINIO_BROWSER_SESSION_DURATION: "8h"  # 控制台会话时长
+      MINIO_STORAGE_CLASS: "EC:2"
+
+    # 资源限制（根据服务器配置调整）
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 8G
+        reservations:
+          memory: 2G
+
+    # 数据持久化（必须使用 SSD/NVMe）
+    volumes:
+      - minio-data:/data       # 命名卷提升性能
+      - minio-config:/root/.minio
+      - /etc/localtime:/etc/localtime:ro  # 时区同步
+
+    # 健康检查（增强版）
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 20s
+      timeout: 15s
+      retries: 5
+      start_period: 30s
+
+    # 启动命令（关键参数）
+    command: server --console-address ":9001" --address ":9000" /data
+
+    # 日志管理（生产级配置）
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+        compress: "true"  # 启用日志压缩
+
+
+
+volumes:
+  minio-data:  # 命名卷提升性能
+    name: minio-data
+    #driver_opts: # 指定文件存放的路径
+    #  type: none
+    #  o: bind
+    #  device: ./data #建议固态硬盘
+  minio-config:
+    name: minio-config
+    #driver_opts: # 指定文件存放的路径
+    #  type: none
+    #  o: bind
+    #  device: ./config
+
+networks:
+  minio-net:
+    name: minio-net
+    #driver: bridge
+    #ipam:
+    #  config:
+    #    - subnet: 172.20.0.0/24  # 隔离网络提升安全
