@@ -1,0 +1,56 @@
+# hosts 的值是第一步配置的分组名  all是全部  如果想指定某组。则填写对应名
+---
+- name: Modify IP address
+  hosts: all
+  become: yes
+  ignore_errors: true
+  tasks:
+    - name: install ssh key
+      authorized_key:
+        user: root
+        key: "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
+        state: present
+    - name: Ensure ONBOOT is set to yes for eth0
+      lineinfile:
+        path: /etc/sysconfig/network-scripts/ifcfg-eth0
+        regexp: '^ONBOOT='
+        line: 'ONBOOT=yes'
+    - name: Set IP address for eth0
+      lineinfile:
+        path: /etc/sysconfig/network-scripts/ifcfg-eth0
+        regexp: '^IPADDR='
+        line: 'IPADDR={{ inventory_hostname }}'
+      notify:
+        - Restart network
+    
+  handlers:
+    - name: Restart network
+      ansible.builtin.service:
+        name: network
+        state: restarted
+
+- name: Disable firewall and SELinux on CentOS 7
+  hosts: all
+  become: yes
+  ignore_errors: true
+  tasks:
+    - name: Stop and disable firewalld service
+      ansible.builtin.systemd:
+        name: firewalld
+        state: stopped
+        enabled: no
+
+    - name: Set SELinux to disabled in configuration file
+      ansible.builtin.lineinfile:
+        path: /etc/selinux/config
+        regexp: '^SELINUX='
+        line: 'SELINUX=disabled'
+
+    - name: Set SELinux to permissive mode immediately (optional)
+      ansible.builtin.command: setenforce 0
+      when: ansible_facts['os_family'] == 'RedHat' and ansible_facts['selinux']['status'] == 'enabled'
+
+    - name: Restart Docker After disabled firewalld
+      ansible.builtin.systemd:
+        name: docker
+        state: restarted
