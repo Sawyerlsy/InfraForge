@@ -17,7 +17,7 @@ services:
     # 环境变量优化
     environment:
       MINIO_ROOT_USER: "admin"  # 生产环境强密码
-      MINIO_ROOT_PASSWORD: "hgrica1@"
+      MINIO_ROOT_PASSWORD: "pw@12345"
       MINIO_COMPRESS: "on"          # 启用数据压缩
       MINIO_COMPRESS_EXTENSIONS: ".txt,.log,.json,.csv"  # 压缩文件类型
       MINIO_COMPRESS_MIME: "text/*,application/json,application/csv"  # MIME类型
