@@ -1,0 +1,75 @@
+# hosts 的值是第一步配置的分组名  all是全部  如果想指定某组。则填写对应名
+---
+- name: Install NTP
+  hosts: all
+  become: yes
+  ignore_errors: true
+  tasks:
+    - name: install ssh key
+      authorized_key:
+        user: root
+        key: "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
+        state: present
+      tags: 
+       - ntp_service
+    - name: Create installation directory
+      file:
+        path: /root/app/
+        state: directory
+        mode: '0755'
+      become: true
+      tags: 
+       - ntp_service
+    - name: Copy ntp.zip binary and dependencies
+      copy:
+        src: ./ntp.zip
+        dest: /root/app/
+        force: yes
+      become: true
+      tags: 
+       - ntp_service
+    - name: Extract ntp.zip installation files
+      unarchive:
+        src: /root/app/ntp.zip
+        dest: /root/app/
+        remote_src: yes
+      tags: 
+       - ntp_service
+    - name: Install NTP service
+      shell: |
+        rpm -ivh  /root/app/autogen-libopts-5.18-5.el7.x86_64.rpm	  
+        rpm -ivh  /root/app/ntp-4.2.6p5-29.el7.centos.2.x86_64.rpm
+        sudo timedatectl set-ntp true
+      become: true
+      tags: 
+       - ntp_service
+    - name: Copy ntp_server.conf binary and dependencies
+      copy:
+        src: ./ntp_server.conf
+        dest: /etc/ntp.conf
+        force: yes
+      when: inventory_hostname in groups['ntp_server']
+      tags: 
+       - ntp_service
+    - name: Copy ntp_client.conf binary and dependencies
+      copy:
+        src: ./ntp_client.conf
+        dest: /etc/ntp.conf
+        force: yes
+      when: inventory_hostname in groups['ntp_client']
+      tags: 
+       - ntp_service
+    - name: Start NTP service
+      become: yes
+      service:
+        name: ntpd
+        state: restarted
+      tags: 
+       - ntp_service
+    - name: Enable NTP service on boot
+      become: yes
+      service:
+        name: ntpd
+        enabled: yes
+      tags: 
+       - ntp_service

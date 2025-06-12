@@ -1,0 +1,85 @@
+# This is the default ansible 'hosts' file.
+#
+# It should live in /etc/ansible/hosts
+#
+#   - Comments begin with the '#' character
+#   - Blank lines are ignored
+#   - Groups of hosts are delimited by [header] elements
+#   - You can enter hostnames or ip addresses
+#   - A hostname/ip can be a member of multiple groups
+
+# Ex 1: Ungrouped hosts, specify before any group headers.
+
+## green.example.com
+## blue.example.com
+## 192.168.100.1
+## 192.168.100.10
+
+# Ex 2: A collection of hosts belonging to the 'webservers' group
+
+#ansible_ssh_user 服务器登录账号  ansible_ssh_pass 服务器登录密码
+#[cluster]  这是分组  使用ansible命令可以指定分组
+#ahead_1 是自定义域名，需要自己在/etc/hosts中配置
+[ntp_server]
+172.31.0.6  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024" 
+172.31.0.7  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024" 
+[ntp_client]
+172.31.0.2  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024" 
+172.31.0.3  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.4  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.5  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.8  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.9  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.10  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.11  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.12  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.13  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.14  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.15  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.16  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.17  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.18  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.19  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.21  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.22  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.23  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.31  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.32  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.33  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.34  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.35  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.36  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.37  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.38  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.39  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.40  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.41  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.42  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.43  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.44  ansible_ssh_user="root" ansible_ssh_pass="Cestc@2024"
+172.31.0.60  ansible_ssh_user="root" ansible_ssh_pass="Admin@9000"
+## [webservers]
+## alpha.example.org
+## beta.example.org
+## 192.168.1.100
+## 192.168.1.110
+
+# If you have multiple hosts following a pattern you can specify
+# them like this:
+
+## www[001:006].example.com
+
+# Ex 3: A collection of database servers in the 'dbservers' group
+
+## [dbservers]
+## 
+## db01.intranet.mydomain.net
+## db02.intranet.mydomain.net
+## 10.25.1.56
+## 10.25.1.57
+
+# Here's another example of host ranges, this time there are no
+# leading 0s:
+
+## db-[99:101]-node.example.com
+
