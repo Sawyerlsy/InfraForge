@@ -54,8 +54,8 @@ confirm_uninstall() {
     fi
 
     step_warn "重要安全提示:"
-    step_warn "1. 卸载前请确保已备份重要容器和数据[3](@ref)"
-    step_warn "2. 强制删除可能导致系统网络服务中断[4](@ref)"
+    step_warn "1. 卸载前请确保已备份重要容器和数据"
+    step_warn "2. 强制删除可能导致系统网络服务中断"
     step_warn "3. 卸载完成后需要重启系统释放内核资源"
 
     step_input "确定要卸载 Docker 及其所有组件吗？(y/n) "
@@ -115,7 +115,7 @@ safe_remove_volumes() {
         docker volume prune -f 2>/dev/null || true
         step_ok "匿名卷已删除"
 
-        # 仅删除未使用的卷[2](@ref)
+        # 仅删除未使用的卷
         docker volume rm $(docker volume ls -q -f dangling=true) 2>/dev/null || true
         step_ok "未使用卷已删除"
     else
@@ -192,7 +192,7 @@ stop_services() {
 remove_packages() {
     step_action "卸载 Docker 软件包..."
     if command -v yum &>/dev/null; then
-        # 扩展卸载包列表[1,3](@ref)
+        # 扩展卸载包列表
         yum remove -y \
             docker-ce \
             docker-ce-cli \
@@ -209,7 +209,7 @@ remove_packages() {
             docker-engine 2>/dev/null || true
         step_ok "YUM包已卸载"
     elif command -v apt-get &>/dev/null; then
-        # 扩展卸载包列表[2](@ref)
+        # 扩展卸载包列表
         apt-get purge -y \
             docker-ce \
             docker-ce-cli \
@@ -268,7 +268,7 @@ remove_files() {
         fi
     done
 
-    # 增加删除用户配置文件[2](@ref)
+    # 增加删除用户配置文件
     local user_config="$HOME/.docker"
     if [ -d "$user_config" ]; then
         rm -rf "$user_config" 2>/dev/null || true
@@ -278,13 +278,13 @@ remove_files() {
 
 protect_system() {
     step_action "保护系统组件..."
-    # 跳过docker用户组删除（可能被系统共用）[4](@ref)
+    # 跳过docker用户组删除（可能被系统共用）
     step_ok "已跳过docker用户组删除（防止影响系统用户）"
 
-    # 跳过非Docker卷删除[4](@ref)
+    # 跳过非Docker卷删除
     step_ok "已跳过非Docker卷检测"
 
-    # 增加系统服务清理[1,3](@ref)
+    # 增加系统服务清理
     step_action "清理系统服务配置..."
     systemctl daemon-reload 2>/dev/null || true
     systemctl reset-failed 2>/dev/null || true
@@ -387,7 +387,7 @@ main() {
     step_ok "结束时间: $end_time" | tee -a "$LOG_FILE"
     step_ok "总耗时: ${duration}秒" | tee -a "$LOG_FILE"
 
-    # 增加重要提示[3,4](@ref)
+    # 增加重要提示
     echo -e "\n\033[1;31m💡 重要提示: 必须重启系统以释放所有内核资源！\033[0m" | tee -a "$LOG_FILE"
     echo -e "\033[1;33m   执行命令: sudo reboot\033[0m" | tee -a "$LOG_FILE"
     echo -e "\033[1;33m   日志文件已保存至: $LOG_FILE\033[0m" | tee -a "$LOG_FILE"

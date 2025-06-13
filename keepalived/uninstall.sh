@@ -15,7 +15,7 @@ WORK_DIR=$(pwd)
 
 # 检查root权限
 if [[ $EUID -ne 0 ]]; then
-   echo -e "${RED}错误：此脚本必须以root权限执行${NC}" 
+   echo -e "${RED}错误：此脚本必须以root权限执行${NC}"
    exit 1
 fi
 
@@ -38,9 +38,9 @@ fi
 
 # 3. 删除核心文件
 echo -e "${GREEN}[步骤3] 删除配置文件与二进制文件...${NC}"
-rm -rfv /etc/keepalived               # 配置目录[5](@ref)
-rm -fv /usr/local/keepalived/sbin/keepalived  # 主程序[2](@ref)
-rm -fv /usr/sbin/keepalived           # 可能存在的符号链接[6](@ref)
+rm -rfv /etc/keepalived               # 配置目录
+rm -fv /usr/local/keepalived/sbin/keepalived  # 主程序
+rm -fv /usr/sbin/keepalived           # 可能存在的符号链接
 
 # 4. 清理Systemd服务
 echo -e "${GREEN}[步骤4] 移除系统服务...${NC}"
@@ -51,13 +51,13 @@ systemctl daemon-reload
 
 # 5. 删除日志和临时文件
 echo -e "${GREEN}[步骤5] 清理日志...${NC}"
-rm -rfv /var/log/keepalived*          # 日志文件[8](@ref)
-rm -fv /var/run/keepalived.pid        # PID文件[5](@ref)
+rm -rfv /var/log/keepalived*          # 日志文件
+rm -fv /var/run/keepalived.pid        # PID文件
 
 # 6. 删除环境配置
 echo -e "${GREEN}[步骤6] 清理环境配置...${NC}"
-rm -fv /etc/sysconfig/keepalived      # 环境变量[2](@ref)
-rm -fv /etc/init.d/keepalived         # SysVinit脚本（兼容旧版）[6](@ref)
+rm -fv /etc/sysconfig/keepalived      # 环境变量
+rm -fv /etc/init.d/keepalived         # SysVinit脚本（兼容旧版）
 
 echo -e "${GREEN}>>> 卸载完成！验证步骤：${NC}"
 echo "1. 检查进程: ps aux | grep keepalived"

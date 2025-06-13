@@ -1,6 +1,6 @@
 #!/bin/bash
 # Ansible 离线安装脚本 - 支持密钥自动化处理（优化版）
-# 使用说明: 
+# 使用说明:
 #   1. 将脚本和所有 RPM 包放在同一目录
 #   2. 创建 hosts.txt 文件包含目标 IP（每行一个）
 #   3. 执行: chmod +x install.sh && ./install.sh
@@ -38,7 +38,7 @@ else
     # 验证安装
     echo -e "\n${GREEN}✅ 安装验证:${NC}"
     ansible --version || {
-        echo -e "${RED}❌ Ansible 未正确安装！${NC}"; 
+        echo -e "${RED}❌ Ansible 未正确安装！${NC}";
         exit 1
     }
 fi
@@ -81,12 +81,12 @@ NEW_HOST_COUNT=0
 # 批量获取主机密钥（带错误处理）
 echo "添加主机密钥到 ~/.ssh/known_hosts..."
 while read -r ip; do
-    # 删除旧记录避免重复添加[6,8](@ref)
+    # 删除旧记录避免重复添加
     ssh-keygen -R "$ip" >/dev/null 2>&1
-    
+
     # 创建临时文件捕获输出
     temp_file=$(mktemp)
-    
+
     # 尝试获取主机密钥（带超时）
     if ssh-keyscan -T 5 "$ip" 2>/dev/null > "$temp_file"; then
         # 关键修复：验证是否获取到有效密钥
@@ -101,7 +101,7 @@ while read -r ip; do
     else
         echo -e "  ${RED}❌ $ip 连接失败（命令执行错误）${NC}"
     fi
-    
+
     rm -f "$temp_file"
 done < "$HOSTS_FILE"
 

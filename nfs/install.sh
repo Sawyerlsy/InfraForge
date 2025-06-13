@@ -131,7 +131,7 @@ configure_client() {
     # 挂载NFS共享（原有代码）
     mount -t nfs ${SERVER_IP}:${SERVER_SHARE} $MOUNT_POINT
 
-    # 增强验证：测试文件读写权限（新增）[6,7](@ref)
+    # 增强验证：测试文件读写权限（新增）
     touch $MOUNT_POINT/testfile 2>/dev/null
     if [ $? -eq 0 ]; then
         rm -f $MOUNT_POINT/testfile
@@ -147,7 +147,7 @@ configure_client() {
         echo "已添加到/etc/fstab"
     fi
 
-    # 显示配置信息（更新提示）[1,8](@ref)
+    # 显示配置信息（更新提示）
     echo -e "\n✅ NFS客户端配置完成！"
     echo "服务端: ${SERVER_IP}:${SERVER_SHARE}"
     echo "本地挂载点: $MOUNT_POINT"
