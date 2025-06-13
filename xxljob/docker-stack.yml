@@ -1,0 +1,55 @@
+version: '3.7'
+services:
+  xxl-job-admin:
+    image: xuxueli/xxl-job-admin:2.3.0
+    deploy:
+      mode: replicated # 用于指定是以副本模式replicated(默认)启动还是全局模式global，如果是全局模式，类似于开始于k8s中的DaemonSet，会在每个节点上启动且只启动一个服务
+      replicas: 1 # 用于指定副本数，只有mode为副本模式的时候生效
+      placement: # 限制容器部署的节点
+        constraints:
+          - "node.labels.zone==public"
+        preferences:
+          - spread: node.labels.zone # 服务可以均匀分布在指定的标签下,node.labels.zone这个标签在集群中有两个值，分别为vs-01、vs-02，那么服务中的副本将会等分为两份，分布到带有两个标签的节点上
+      endpoint_mode: vip # 通过虚拟的IP对外暴露服务，客户端无法察觉有多少个节点提供服务，也不知道实际提供服务的IP和端口
+      restart_policy:
+        condition: on-failure # 重启的条件，分为 none，on-failure,any(默认)
+        delay: 5s # 表示尝试重启的时间间隔（默认5s）
+        #max_attempts: 3 # 最多的尝试次数（默认一直重试）
+      update_config:
+        parallelism: 1 # 同时升级[回滚]的容器数
+        delay: 68s # 升级[回滚]的时间间隔，需考虑到预热时间、缓存加载时间等，根据应用实际启动耗时调整
+        order: stop-first # stop-first:先停止旧的; start-first:先启动新的，之后覆盖旧的
+        # failure_action: rollback # 失败后如何做：continue, rollback（仅在update_config中有）, or pause (默认 pause)
+    #      resources: # limit用于限制最大的资源使用数量，reservation为最低的资源占用量。超过限制时容器会被Kill掉
+    #        limits:
+    #          cpus: '0.50'
+    #          memory: 50M
+    #        reservations:
+    #          cpus: '0.25'
+    #          memory: 20M
+    volumes:
+      - /etc/localtime:/etc/localtime # 在windows中构建镜像时会导致指定的软连接无效,容器时差8小时，为了规避该情况，运行时使用volume同步时区.容器路径不作改变，减少对原有配置的修改
+      - xxl-data:/data
+    ports:
+      - target: 9999  # 容器内的端口号
+        published: 9999  # 露给 docker 宿主机的端口号
+        protocol: tcp
+        mode: host # host：表示每个节点的端口号都发布为宿主机端口；ingress：专用于 swarm 集群，所有节点的端口会被负载均衡为宿主机端口
+    environment:
+      - PARAMS=--server.port=9999 --server.servlet.context-path=/dispatch --spring.datasource.url=jdbc:mysql://10.194.65.131:3307/vstation_xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai --spring.datasource.username=root --spring.datasource.password=hgrica1@
+    networks:
+      - virtual-station-network
+
+# 使用外部已定义好的网络,此处使用自带的host网络
+networks:
+  virtual-station-network:
+    name: host # 指定使用host网络,即宿主机IP
+    external: true
+
+
+
+# 使用命名卷标的方式定义虚拟卷,方便迁移和维护
+volumes:
+  xxl-data:
+    name: xxl-data
+    #external: true # 设置为ture时,外部要先定义

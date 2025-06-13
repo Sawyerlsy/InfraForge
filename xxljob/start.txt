@@ -1,0 +1,1 @@
+docker stack deploy xxl-job-admin --compose-file=docker-stack.yml --with-registry-auth
