@@ -1,4 +1,4 @@
-upstream  nacos_grpc {
+upstream  nacos-grpc {
     server 10.194.65.133:9848;
     server 10.194.65.134:9848;
     server 10.194.65.135:9848;
@@ -10,5 +10,5 @@ server {
     listen       9848 reuseport; #Nacos 2.x 使用 gRPC 长连接推送服务变更，reuseport 确保万级连接均匀分配至多 Worker
     proxy_connect_timeout 10s;
     proxy_timeout 30s;
-    proxy_pass nacos_grpc;
+    proxy_pass nacos-grpc;
 }

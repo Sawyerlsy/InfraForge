@@ -1,7 +1,7 @@
 # ----------------------
 # Redis集群 (3主6从)
 # ----------------------
-upstream redis_cluster {
+upstream redis-cluster {
     server 10.194.68.176:6391;
     server 10.194.68.176:6392;
     server 10.194.68.176:6393;
@@ -17,7 +17,7 @@ upstream redis_cluster {
 
 server {
     listen 6379 reuseport;           # 高频短连接场景下，reuseport 通过多 Listener 队列分散连接，降低锁竞争，提升吞吐量 20%-40%
-    proxy_pass redis_cluster;
+    proxy_pass redis-cluster;
     proxy_connect_timeout 3s;        # 连接超时时间
     proxy_timeout 15s;               # 请求超时时间
     proxy_buffer_size 16k;           # 优化内存碎片
