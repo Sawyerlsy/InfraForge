@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  redis:
+    image: redis:5.0.6
+    container_name: redis
+    hostname: redis
+    restart: always
+    volumes:
+      #- ./deploy/redis/conf/redis.conf:/usr/local/etc/redis/redis.conf:rw
+      - ./deploy/redis/data:/data:rw
+    command:
+      sh -c "echo 'bind 0.0.0.0 \nprotected-mode no \nport 6379 \ndir /data \nrequirepass hgrica1@ \nappendonly yes' > 
+      /etc/redis.conf  && redis-server /etc/redis.conf"
+    ports:
+      - "6379:6379"
+#    networks:
+#      - app_net
+#networks:
+#  app_net:
+#    external: true
