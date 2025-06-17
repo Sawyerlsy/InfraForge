@@ -1,18 +1,24 @@
-version: '3.1'
+version: '3.8'
 services:
   xxl-job-admin:
-    image: xuxueli/xxl-job-admin:2.3.0
+    image: xuxueli/xxl-job-admin:3.1.0
+    security_opt:
+      - seccomp:unconfined  # 解除线程创建限制.修复Java应用启动时JVM创建GC线程失败的问题.
+    cap_add:
+      - SYS_RESOURCE       # 授予资源控制权限.为容器添加Linux的CAP_SYS_RESOURCE能力（Capability），允许其​​突破内核资源限制
     container_name: xxl-job-admin
     hostname: xxl-job-admin
     restart: always
     environment:
-     - PARAMS=--server.port=9999 --server.servlet.context-path=/dispatch --spring.datasource.url=jdbc:mysql://10.173.234.131:3306/monitor_xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai --spring.datasource.username=root --spring.datasource.password=hgrica1@
+     - PARAMS=--server.port=9999 --server.servlet.context-path=/dispatch --spring.datasource.url=jdbc:mysql://10.194.65.131:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai --spring.datasource.username=root --spring.datasource.password=hgrica1@
     ports:
      - "9999:9999"
-#    networks:
-#     - app_net
-#
-#networks:
-#  app_net:
-#    external: true
+    volumes:
+      - ./logs:/data/applogs  # 持久化日志
+    networks:
+      - xxl-net
 
+networks:
+  xxl-net:
+    name: xxl-net
+    driver: bridge
