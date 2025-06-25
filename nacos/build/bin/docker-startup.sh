@@ -1,0 +1,166 @@
+#!/bin/bash
+# Copyright 2025 Sawyerlsy
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+set -x
+export CUSTOM_SEARCH_NAMES="application"
+export CUSTOM_SEARCH_LOCATIONS=file:${BASE_DIR}/conf/
+export MEMBER_LIST=""
+PLUGINS_DIR="/home/nacos/plugins/peer-finder"
+function print_servers() {
+   if [[ ! -d "${PLUGINS_DIR}" ]]; then
+    echo "" >"$CLUSTER_CONF"
+    for server in ${NACOS_SERVERS}; do
+      echo "$server" >>"$CLUSTER_CONF"
+    done
+  else
+    bash $PLUGINS_DIR/plugin.sh
+    sleep 30
+  fi
+}
+
+function set_db_protocol() {
+    local db_type=$(echo "${SPRING_DATASOURCE_PLATFORM}" | tr '[:upper:]' '[:lower:]')  # 统一转为小写
+    case "${db_type}" in
+        gauss|opengauss)
+            export DB_PROTOCOL="opengauss"
+            ;;
+        dm|dameng)
+            export DB_PROTOCOL="dm"
+            ;;
+        *)
+            export DB_PROTOCOL="${db_type:-mysql}"
+            ;;
+    esac
+    echo "DB_PROTOCOL set to: ${DB_PROTOCOL}"
+}
+
+function set_default_db_port() {
+    case "${SPRING_DATASOURCE_PLATFORM,,}" in
+        gauss|opengauss) export DEFAULT_DB_PORT=8000 ;;
+        dm|dameng) export DEFAULT_DB_PORT=5236 ;;
+        *) export DEFAULT_DB_PORT=3306 ;;
+    esac
+}
+
+function set_default_db_params() {
+    [ -n "${DB_PARAM}" ] && return 0
+
+    local db_type=$(echo "${SPRING_DATASOURCE_PLATFORM:-mysql}" | tr '[:upper:]' '[:lower:]')
+    local ssl_enabled="${DB_USE_SSL:-false}"
+
+    case "${db_type}" in
+        mysql)
+            export DB_PARAM="useUnicode=true&characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000"
+            DB_PARAM+="&zeroDateTimeBehavior=convertToNull&autoReconnect=true&serverTimezone=Asia/Shanghai"
+            DB_PARAM+="&useSSL=${ssl_enabled}"
+            ;;
+        gauss|opengauss)
+            local ssl_mode="disable"
+            [[ "${ssl_enabled}" == "true" ]] && ssl_mode="require"
+            export DB_PARAM="characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000"
+            DB_PARAM+="&sslmode=${ssl_mode}&timezone=Asia/Shanghai&extra_float_digits=0"
+            ;;
+        dm|dameng)
+            export DB_PARAM="useUnicode=true&characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000"
+            DB_PARAM+="&autoReconnect=true&localTimezone=480&useSSL=${ssl_enabled}"
+            ;;
+        *)
+            export DB_PARAM=""
+            ;;
+    esac
+    echo "DB_TYPE: ${db_type} | SSL_ENABLED: ${ssl_enabled}"
+    echo "Generated DB_PARAM: ${DB_PARAM}"
+}
+#===========================================================================================
+# JVM Configuration
+#===========================================================================================
+JAVA_OPT="${JAVA_OPT} -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -XX:-UseParNewGC"
+if [[ "${MODE}" == "standalone" ]]; then
+  JAVA_OPT="${JAVA_OPT} -Xms${JVM_XMS} -Xmx${JVM_XMX} -Xmn${JVM_XMN}"
+  JAVA_OPT="${JAVA_OPT} -Dnacos.standalone=true"
+else
+  if [[ "${EMBEDDED_STORAGE}" == "embedded" ]]; then
+    JAVA_OPT="${JAVA_OPT} -DembeddedStorage=true"
+  fi
+  JAVA_OPT="${JAVA_OPT} -server -Xms${JVM_XMS} -Xmx${JVM_XMX} -Xmn${JVM_XMN} -XX:MetaspaceSize=${JVM_MS} -XX:MaxMetaspaceSize=${JVM_MMS}"
+  if [[ "${NACOS_DEBUG}" == "y" ]]; then
+    JAVA_OPT="${JAVA_OPT} -Xdebug -Xrunjdwp:transport=dt_socket,address=9555,server=y,suspend=n"
+  fi
+  JAVA_OPT="${JAVA_OPT} -XX:-OmitStackTraceInFastThrow -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${BASE_DIR}/logs/java_heapdump.hprof"
+  JAVA_OPT="${JAVA_OPT} -XX:-UseLargePages"
+  print_servers
+fi
+
+#===========================================================================================
+# Setting system properties
+#===========================================================================================
+# set  mode that Nacos Server function of split
+if [[ "${FUNCTION_MODE}" == "config" ]]; then
+  JAVA_OPT="${JAVA_OPT} -Dnacos.functionMode=config"
+elif [[ "${FUNCTION_MODE}" == "naming" ]]; then
+  JAVA_OPT="${JAVA_OPT} -Dnacos.functionMode=naming"
+fi
+# set nacos server ip
+if [[ ! -z "${NACOS_SERVER_IP}" ]]; then
+  JAVA_OPT="${JAVA_OPT} -Dnacos.server.ip=${NACOS_SERVER_IP}"
+fi
+
+if [[ ! -z "${USE_ONLY_SITE_INTERFACES}" ]]; then
+  JAVA_OPT="${JAVA_OPT} -Dnacos.inetutils.use-only-site-local-interfaces=${USE_ONLY_SITE_INTERFACES}"
+fi
+
+if [[ ! -z "${PREFERRED_NETWORKS}" ]]; then
+  JAVA_OPT="${JAVA_OPT} -Dnacos.inetutils.preferred-networks=${PREFERRED_NETWORKS}"
+fi
+
+if [[ ! -z "${IGNORED_INTERFACES}" ]]; then
+  JAVA_OPT="${JAVA_OPT} -Dnacos.inetutils.ignored-interfaces=${IGNORED_INTERFACES}"
+fi
+
+### If turn on auth system:
+if [[ ! -z "${NACOS_AUTH_ENABLE}" ]]; then
+  JAVA_OPT="${JAVA_OPT} -Dnacos.core.auth.enabled=${NACOS_AUTH_ENABLE}"
+fi
+
+if [[ "${PREFER_HOST_MODE}" == "hostname" ]]; then
+  JAVA_OPT="${JAVA_OPT} -Dnacos.preferHostnameOverIp=true"
+fi
+JAVA_OPT="${JAVA_OPT} -Dnacos.member.list=${MEMBER_LIST}"
+
+JAVA_MAJOR_VERSION=$($JAVA -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p')
+if [[ "$JAVA_MAJOR_VERSION" -ge "9" ]]; then
+  JAVA_OPT="${JAVA_OPT} -Xlog:gc*:file=${BASE_DIR}/logs/nacos_gc.log:time,tags:filecount=10,filesize=102400"
+else
+  JAVA_OPT_EXT_FIX="-Djava.ext.dirs=${JAVA_HOME}/jre/lib/ext:${JAVA_HOME}/lib/ext"
+  JAVA_OPT="${JAVA_OPT} -Xloggc:${BASE_DIR}/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"
+fi
+
+JAVA_OPT="${JAVA_OPT} -Dloader.path=${BASE_DIR}/plugins,${BASE_DIR}/plugins/health,${BASE_DIR}/plugins/cmdb,${BASE_DIR}/plugins/selector"
+JAVA_OPT="${JAVA_OPT} -Dnacos.home=${BASE_DIR}"
+JAVA_OPT="${JAVA_OPT} -jar ${BASE_DIR}/target/nacos-server.jar"
+JAVA_OPT="${JAVA_OPT} ${JAVA_OPT_EXT}"
+JAVA_OPT="${JAVA_OPT} --spring.config.additional-location=${CUSTOM_SEARCH_LOCATIONS}"
+JAVA_OPT="${JAVA_OPT} --spring.config.name=${CUSTOM_SEARCH_NAMES}"
+JAVA_OPT="${JAVA_OPT} --logging.config=${BASE_DIR}/conf/nacos-logback.xml"
+JAVA_OPT="${JAVA_OPT} --server.max-http-header-size=524288"
+
+set_db_protocol
+set_default_db_port
+set_default_db_params
+
+echo "Nacos is starting, you can docker logs your container"
+exec $JAVA ${JAVA_OPT}
