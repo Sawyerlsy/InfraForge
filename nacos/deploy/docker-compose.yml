@@ -4,7 +4,6 @@ services:
   nacos1:
     image: sawyerlsy/nacos:v2.2.3-local
     container_name: nacos-node1
-    network_mode: host
     environment:
       - TZ=Asia/Shanghai  # 指定时区
       - PREFER_HOST_MODE=ip
@@ -22,6 +21,11 @@ services:
       - NACOS_SERVERS=192.168.1.133:8848,192.168.1.134:8848,192.168.1.135:8848  # 需要和NACOS_SERVER_IP保持一致
       - NACOS_SERVER_IP=192.168.1.133
       - NACOS_APPLICATION_PORT=8848
+    ports:
+      - "8848:8848"   # HTTP
+      - "7848:7848"   # Raft
+      - "9848:9848"   # Client gRPC
+      - "9849:9849"   # Server gRPC
     volumes:
-      - ./logs/nacos1:/home/nacos/logs
+      - ./logs:/home/nacos/logs
     restart: always
