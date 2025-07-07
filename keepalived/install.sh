@@ -8,20 +8,20 @@ set -euo pipefail
 detect_interface() {
     # 获取物理网卡:排除虚拟接口
     mapfile -t PHYS_IFACES < <(ip -o -4 addr show | awk '{if ($2 !~ /^lo$|^docker|^br-|^veth|^tun|^cali|^flannel/ && $9 == "UP");print $2}' | sort -u)
-    
+
     # 默认路由网卡优先
     DEFAULT_IFACE=$(ip route show default 2>/dev/null | awk '/default/ {print $5; exit}')
-    
+
     [ -z "$DEFAULT_IFACE" ] && DEFAULT_IFACE=$(
         ip -o -4 addr show | awk '$9~/UP|UNKNOWN/ && $2!~/^lo$/ {print $2; exit}'
     )
-    
+
     # 调试信息输出
     # echo "---------------------------------" >&2
     # echo "默认路由设备：${DEFAULT_IFACE:-未检测到}" >&2
     # echo "物理网卡列表：${PHYS_IFACES[*]:-"未检测到"}" >&2
     # echo "---------------------------------" >&2
-    
+
     # 交互式选择
     if [[ -n "$DEFAULT_IFACE" ]]; then
         echo -e "\n📡 检测到默认路由网卡: $DEFAULT_IFACE" >&2
@@ -38,7 +38,7 @@ detect_interface() {
         while true; do
             read -p "请选择序号 (1-${#PHYS_IFACES[@]}): " choice
             [[ "$choice" =~ ^[1-9][0-9]*$ && $choice -le ${#PHYS_IFACES[@]} ]] && {
-                echo "${PHYS_IFACES[$((choice-1))]}" 
+                echo "${PHYS_IFACES[$((choice-1))]}"
                 return
             }
             echo "无效选择!">&2
@@ -58,7 +58,7 @@ function disable_selinux() {
     if [ -f /etc/selinux/config ]; then
         # 1. 优先检查当前运行时状态
         CURRENT_STATE=$(getenforce 2>/dev/null || echo "Disabled")
-        
+
         # 2. 根据当前状态处理
         case "$CURRENT_STATE" in
             Enforcing)
@@ -83,12 +83,73 @@ function disable_selinux() {
     fi
 }
 
+function check_firewall() {
+    if systemctl is-active firewalld --quiet; then
+        echo -e "\n🔥 检测到防火墙(firewalld)正在运行！"
+        echo "警告：防火墙可能阻止VRRP协议(IP协议号112)，导致Keepalived主备通信失败[4](@ref)"
+
+        while true; do
+            read -p "请选择操作:
+  [1] 永久关闭防火墙(推荐)
+  [2] 临时关闭防火墙(重启后恢复)
+  [3] 保持开启(需手动配置规则)
+  [4] 退出脚本
+请输入选项(1-4): " choice
+
+            case $choice in
+                1)
+                    systemctl stop firewalld
+                    systemctl disable firewalld
+                    echo -e "\n✅ 防火墙已永久关闭"
+                    return
+                    ;;
+                2)
+                    systemctl stop firewalld
+                    echo -e "\n⚠️ 防火墙已临时关闭(重启后恢复)"
+                    return
+                    ;;
+                3)
+
+                    # 验证规则是否生效
+                    if firewall-cmd --list-all | grep -q 'protocol value="vrrp" accept'; then
+                        echo "✅ VRRP规则已生效"
+                    else
+                        echo -e "\nℹ️ 请手动执行以下命令允许VRRP协议:"
+                        echo "  firewall-cmd --add-rich-rule='rule protocol value=\"vrrp\" accept' --permanent"
+                        echo "  firewall-cmd --reload"
+                    fi
+                    return
+                    ;;
+                4)
+                    exit 1
+                    ;;
+                *)
+                    echo "无效选项，请重新输入!"
+                    ;;
+            esac
+        done
+    else
+        echo -e "\nℹ️ 防火墙(firewalld)未运行"
+    fi
+
+    # 检查iptables规则（精确匹配）
+    if iptables -L -n -v | grep -q "vrrp *\*"; then
+        echo -e "\nℹ️ iptables已配置VRRP规则"
+    else
+        echo -e "\n⚠️ 未检测到iptables的VRRP规则"
+        echo "手动配置命令:"
+        echo "  iptables -I INPUT -p vrrp -j ACCEPT"
+        echo "如需持久化规则:"
+        echo "  iptables-save > /etc/sysconfig/iptables"
+    fi
+}
+
 # 交互式配置
 function user_config() {
     # 角色选择
     while true; do
         read -p "请输入 Keepalived 角色 (MASTER|BACKUP): " ROLE
-        ROLE=$(echo "$ROLE" | tr '[:lower:]' '[:upper:]')  
+        ROLE=$(echo "$ROLE" | tr '[:lower:]' '[:upper:]')
         [[ "$ROLE" == "MASTER" || "$ROLE" == "BACKUP" ]] && break
         echo "错误：请输入'MASTER'或'BACKUP'"
     done
@@ -123,15 +184,15 @@ function install_dependencies() {
     echo -e "\n📦 安装系统依赖..."
     tar -xvf gcc-x86.tar
     rpm -Uvh ./gcc-x86/*.rpm --nodeps --force
-    
+
     tar -xvf openssl.tar
     rpm -Uvh ./openssl/*.rpm --nodeps --force
-    
+
     tar -xvf popt_1.18.orig.tar.gz
     pushd popt-1.18 >/dev/null
     ./configure && make && make install
     popd >/dev/null
-    
+
     tar -xvf daemon-0.8.tar.gz
     pushd daemon-0.8 >/dev/null
     ./configure && make && make install
@@ -143,7 +204,7 @@ function install_keepalived() {
     KEEPALIVED_TAR=$(ls keepalived-*.tar.gz)
     [[ ! "$KEEPALIVED_TAR" =~ keepalived-([0-9.]+)\.tar\.gz ]] && { echo "❌ Keepalived压缩包未找到"; exit 1; }
     KEEPALIVED_VERSION=${BASH_REMATCH[1]}
-    
+
     echo -e "\n🔧 编译Keepalived v$KEEPALIVED_VERSION..."
     tar -xvf "$KEEPALIVED_TAR"
     pushd "keepalived-$KEEPALIVED_VERSION" >/dev/null
@@ -180,11 +241,11 @@ check_http() {
     local timeout=2
     local NGINX_EXPECTED_CODES="200|301|302|401|403|404"
     local url="${NGINX_CHECK_URL:-http://localhost}"
-    
+
     # 使用timeout防止阻塞
     status_code=$(timeout $timeout curl -s -o /dev/null -w "%{http_code}" "$url" 2>/dev/null)
     local ret=$?
-    
+
     # 处理超时及错误码
     if [ $ret -eq 124 ]; then
         log "HTTP检测超时"
@@ -193,7 +254,7 @@ check_http() {
         log "Curl错误: $ret"
         return 1
     fi
-    
+
     [[ "$status_code" =~ ^(${NGINX_EXPECTED_CODES:-200})$ ]]
 }
 
@@ -243,19 +304,19 @@ function generate_keepalived_conf() {
 
 global_defs {
    # 定义管理员邮件地址,表示keepalived在发生诸如切换操作时需要发送email通知,以及email发送给哪些邮件地址,可以有多个,每行一个
-    #notification_email {    
-        #设置报警邮件地址，可以设置多个，每行一个。 需开启本机的sendmail服务 
+    #notification_email {
+        #设置报警邮件地址，可以设置多个，每行一个。 需开启本机的sendmail服务
         #137708020@qq.com
     #}
     #keepalived在发生诸如切换操作时需要发送email通知地址，表示发送通知的邮件源地址是谁
     #notification_email_from 137708020@qq.com
-    
+
     #指定发送email的smtp服务器
     #smtp_server 127.0.0.1
-    
+
     #设置连接smtp server的超时时间
     #smtp_connect_timeout 30
-    
+
     #运行keepalived的机器的一个标识，通常可设为hostname。故障发生时，发邮件时显示在邮件主题中的信息。
     router_id NGINX-1
     vrrp_skip_check_adv_addr
@@ -267,69 +328,69 @@ global_defs {
 }
 
 # 定义chk_nginx脚本,脚本执行间隔10秒，权重-10，检测nginx服务是否在运行。有很多方式，比如进程，用脚本检测等等
-vrrp_script chk_nginx {  
- 
-    #这里通过脚本监测    
-    script "/etc/keepalived/nginx_check.sh"  
-    
+vrrp_script chk_nginx {
+
+    #这里通过脚本监测
+    script "/etc/keepalived/nginx_check.sh"
+
     #脚本执行间隔，每2s检测一次
-    interval 2    
-    
-    #脚本结果导致的优先级变更，检测失败（脚本返回非0）则优先级 -15   
-    weight -15     
-    
-    #检测连续2次失败才算是失败。会用weight减少优先级（1-255之间）    
-    fall 2     
-    
+    interval 2
+
+    #脚本结果导致的优先级变更，检测失败（脚本返回非0）则优先级 -15
+    weight -15
+
+    #检测连续2次失败才算是失败。会用weight减少优先级（1-255之间）
+    fall 2
+
     #检测3次成功才算成功,恢复优先级到初始值
-    rise 3                    
+    rise 3
 }
 
 #定义vrrp实例，VI_1 为虚拟路由的标示符，自己定义名称，keepalived在同一virtual_router_id中priority(0-255)最大的会成为MASTER，也就是接管VIP，当priority最大的主机发生故障后次priority将会接管
-vrrp_instance VI_1 { 
- 
+vrrp_instance VI_1 {
+
     #指定keepalived的角色，MASTER表示此主机是主服务器，BACKUP表示此主机是备用服务器。注意这里的state指定instance(Initial)的初始状态，就是说在配置好后，这台服务器的初始状态就是这里指定的，
     #但这里指定的不算，还是得要通过竞选通过优先级来确定。如果这里设置为MASTER，但如若他的优先级不及另外一台，那么这台在发送通告时，会发送自己的优先级，另外一台发现优先级不如自己的高，
-    #那么他会就回抢占为MASTER   
-    state $ROLE 
-    
+    #那么他会就回抢占为MASTER
+    state $ROLE
+
     #指定HA监测网络的接口。与本机 IP 地址所在的网络接口相同，可通过ip addr 查看
     interface $INTERFACE
- 
+
     # 发送多播数据包时的源IP地址，这里注意了，这里实际上就是在哪个地址上发送VRRP通告，这个非常重要，
-    #一定要选择稳定的网卡端口来发送，这里相当于heartbeat的心跳端口，如果没有设置那么就用默认的绑定的网卡的IP，也就是interface指定的IP地址    
+    #一定要选择稳定的网卡端口来发送，这里相当于heartbeat的心跳端口，如果没有设置那么就用默认的绑定的网卡的IP，也就是interface指定的IP地址
     #mcast_src_ip 192.168.10.101
-    
+
     #虚拟路由标识，这个标识是一个数字，同一个vrrp实例使用唯一的标识。即同一vrrp_instance下，MASTER和BACKUP必须是一致的
-    virtual_router_id $VIRTUAL_ROUTER_ID    
- 
-    #定义优先级，数字越大，优先级越高，在同一个vrrp_instance下，MASTER的优先级必须大于BACKUP的优先级   
+    virtual_router_id $VIRTUAL_ROUTER_ID
+
+    #定义优先级，数字越大，优先级越高，在同一个vrrp_instance下，MASTER的优先级必须大于BACKUP的优先级
     priority $([ "$ROLE" == "MASTER" ] && echo 100 || echo 90)
 
-    #设定MASTER与BACKUP负载均衡器之间同步检查的时间间隔，单位是秒.每隔一秒发送一次心跳，确保从服务器存活   
-    advert_int 1       
- 
+    #设定MASTER与BACKUP负载均衡器之间同步检查的时间间隔，单位是秒.每隔一秒发送一次心跳，确保从服务器存活
+    advert_int 1
+
     #设置验证类型和密码。主从必须一样
-    authentication {    
-    
+    authentication {
+
         #设置vrrp验证类型，主要有PASS和AH两种
-        auth_type PASS           
-        
+        auth_type PASS
+
         #设置vrrp验证密码，在同一个vrrp_instance下，MASTER与BACKUP必须使用相同的密码才能正常通信
-        auth_pass $AUTH_PASS           
+        auth_pass $AUTH_PASS
     }
-    
+
     #VRRP HA 虚拟地址 如果有多个VIP，继续换行填写
     #设置VIP，它随着state变化而增加删除，当state为MASTER的时候就添加，当state为BACKUP的时候则删除，由优先级决定
-    virtual_ipaddress {          
-        $VIP
+    virtual_ipaddress {
+        $VIP/24 dev $INTERFACE
     }
-    
+
     #执行nginx检测脚本。注意这个设置不能紧挨着写在vrrp_script配置块的后面（实验中碰过的坑），否则nginx监控失效！！
-    track_script {   
- 
-       #引用VRRP脚本，即在 vrrp_script 部分指定的名字。定期运行它们来改变优先级，并最终引发主备切换。 
-       chk_nginx                    
+    track_script {
+
+       #引用VRRP脚本，即在 vrrp_script 部分指定的名字。定期运行它们来改变优先级，并最终引发主备切换。
+       chk_nginx
     }
 
     #当该keepalived切换状态时,执行下面的脚本
@@ -345,10 +406,10 @@ EOF
 function configure_keepalived() {
     echo -e "\n⚙️ 配置Keepalived ($ROLE节点)..."
     mkdir -p /etc/keepalived
-    
+
     # 生成配置文件
     generate_keepalived_conf
-    
+
     # Nginx监控脚本
     generate_nginx_check_script
 
@@ -368,7 +429,7 @@ Requires=network-online.target
 [Service]
 Type=forking
 PIDFile=/var/run/keepalived.pid
-EnvironmentFile=-/etc/sysconfig/keepalived
+EnvironmentFile=-/usr/local/keepalived/etc/sysconfig/keepalived
 ExecStart=/usr/local/keepalived/sbin/keepalived -f /etc/keepalived/keepalived.conf \$KEEPALIVED_OPTIONS
 ExecReload=/bin/kill -HUP \$MAINPID
 Restart=on-failure
@@ -400,7 +461,7 @@ function main() {
     configure_keepalived
     create_service
     start_service
-    
+
     echo -e "\n✅ 部署完成！"
     echo "============================================"
     echo " Keepalived路径: /usr/local/keepalived"
@@ -415,5 +476,6 @@ function main() {
     echo "============================================"
 }
 
+check_firewall
 disable_selinux
 main
