@@ -361,6 +361,14 @@ vrrp_instance VI_1 {
     #一定要选择稳定的网卡端口来发送，这里相当于heartbeat的心跳端口，如果没有设置那么就用默认的绑定的网卡的IP，也就是interface指定的IP地址
     #mcast_src_ip 192.168.10.101
 
+    # 本机 IP.当VRRP 心跳通信失败时，当交换机禁用组播（如 ARP 广播限制)导致通信失败时,可启用启用单播通信
+    #unicast_src_ip 10.194.68.221
+
+    # 对端 IP
+    #unicast_peer {
+    #  10.194.68.222
+    #}
+
     #虚拟路由标识，这个标识是一个数字，同一个vrrp实例使用唯一的标识。即同一vrrp_instance下，MASTER和BACKUP必须是一致的
     virtual_router_id $VIRTUAL_ROUTER_ID
 
@@ -456,7 +464,8 @@ function start_service() {
 # 主流程
 function main() {
     user_config
-    install_dependencies
+    # 如果缺失依赖可以放开该选项
+    #install_dependencies
     install_keepalived
     configure_keepalived
     create_service

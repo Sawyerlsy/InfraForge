@@ -1,4 +1,3 @@
-# 启动命令
 version: '3.8'
 services:
   nginx:
