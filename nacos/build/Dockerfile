@@ -1,32 +1,19 @@
-# Copyright 2025 Sawyerlsy
-#
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-FROM centos:7.9.2009
+FROM alpine:latest
 LABEL maintainer="Sawyerlsy <sawyerlsy@126.com>"
+
+# install jdk
+RUN apk add --no-cache openjdk8-jre-base curl iputils ncurses vim libcurl bash
 
 # set environment
 ENV MODE="cluster" \
     PREFER_HOST_MODE="ip"\
     BASE_DIR="/home/nacos" \
-    CLASSPATH=".:/home/nacos/conf" \
+    CLASSPATH=".:/home/nacos/conf:$CLASSPATH" \
     CLUSTER_CONF="/home/nacos/conf/cluster.conf" \
     FUNCTION_MODE="all" \
-    JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk" \
+    JAVA_HOME="/usr/lib/jvm/java-1.8-openjdk" \
     NACOS_USER="nacos" \
-    JAVA="/usr/lib/jvm/java-1.8.0-openjdk/bin/java" \
+    JAVA="/usr/lib/jvm/java-1.8-openjdk/bin/java" \
     JVM_XMS="1g" \
     JVM_XMX="1g" \
     JVM_XMN="512m" \
@@ -43,27 +30,21 @@ WORKDIR $BASE_DIR
 
 # run all operation
 RUN set -x \
-    && echo "ip_resolve=4" >> /etc/yum.conf \
-    && curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo \
-    && sed -i '/mirrors.cloud.aliyuncs.com/d' /etc/yum.repos.d/CentOS-Base.repo \
-    && yum clean all \
-    && yum makecache fast \
-    && yum update -y \
-    && yum install -y java-1.8.0-openjdk java-1.8.0-openjdk-devel iputils nc vim libcurl \
-    && yum clean all \
     && curl -SL --retry 3 --retry-delay 10 https://github.com/Sawyerlsy/nacos/releases/download/${NACOS_VERSION}${HOT_FIX_FLAG}/nacos-server-${NACOS_VERSION}.tar.gz -o /home/nacos-server.tar.gz \
     && tar -xzvf /home/nacos-server.tar.gz -C /home \
-    && rm -rf /home/nacos-server.tar.gz /home/nacos/bin/* /home/nacos/conf/*.properties /home/nacos/conf/*.example /home/nacos/conf/nacos-mysql.sql /var/cache/yum/* \
-    && ln -snf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime \
-    && mkdir -p logs \
-    && touch logs/start.out \
-    && ln -sf /dev/stdout logs/start.out \
-    && ln -sf /dev/stderr logs/start.out
+    && rm -rf /home/nacos-server.tar.gz /home/nacos/bin/* /home/nacos/conf/*.properties /home/nacos/conf/*.example /home/nacos/conf/nacos-mysql.sql \
+    && ln -snf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime && echo $TIME_ZONE > /etc/timezone
 
 ADD bin/docker-startup.sh bin/docker-startup.sh
 ADD conf/application.properties conf/application.properties
-RUN sed -i 's/\r$//' bin/docker-startup.sh && \
-    chmod +x bin/docker-startup.sh
+
+# 设置启动日志目录
+RUN mkdir -p logs \
+	&& touch logs/start.out \
+	&& ln -sf /dev/stdout logs/start.out \
+	&& ln -sf /dev/stderr logs/start.out \
+    && sed -i 's/\r$//' bin/docker-startup.sh \
+    && chmod +x bin/docker-startup.sh
 
 EXPOSE 8848
-ENTRYPOINT ["bin/docker-startup.sh"]
+ENTRYPOINT ["sh","bin/docker-startup.sh"]

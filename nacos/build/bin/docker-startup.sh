@@ -18,7 +18,7 @@
 set -x
 export CUSTOM_SEARCH_NAMES="application"
 export CUSTOM_SEARCH_LOCATIONS=file:${BASE_DIR}/conf/
-export MEMBER_LIST=""
+export MEMBER_LIST="$MEMBER_LIST"
 PLUGINS_DIR="/home/nacos/plugins/peer-finder"
 function print_servers() {
    if [[ ! -d "${PLUGINS_DIR}" ]]; then
@@ -30,6 +30,14 @@ function print_servers() {
     bash $PLUGINS_DIR/plugin.sh
     sleep 30
   fi
+}
+
+function join_if_exist() {
+    if [ -n "$2" ]; then
+        echo "$1$2"
+    else
+        echo ""
+    fi
 }
 
 function set_db_protocol() {
@@ -88,15 +96,21 @@ function set_default_db_params() {
 #===========================================================================================
 # JVM Configuration
 #===========================================================================================
-JAVA_OPT="${JAVA_OPT} -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -XX:-UseParNewGC"
+Xms=$(join_if_exist "-Xms" ${JVM_XMS})
+Xmx=$(join_if_exist "-Xmx" ${JVM_XMX})
+Xmn=$(join_if_exist "-Xmn" ${JVM_XMN})
+XX_MS=$(join_if_exist "-XX:MetaspaceSize=" ${JVM_MS})
+XX_MMS=$(join_if_exist "-XX:MaxMetaspaceSize=" ${JVM_MMS})
+
+JAVA_OPT="${JAVA_OPT} -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8 "
 if [[ "${MODE}" == "standalone" ]]; then
-  JAVA_OPT="${JAVA_OPT} -Xms${JVM_XMS} -Xmx${JVM_XMX} -Xmn${JVM_XMN}"
+  JAVA_OPT="${JAVA_OPT} $Xms $Xmx $Xmn"
   JAVA_OPT="${JAVA_OPT} -Dnacos.standalone=true"
 else
   if [[ "${EMBEDDED_STORAGE}" == "embedded" ]]; then
     JAVA_OPT="${JAVA_OPT} -DembeddedStorage=true"
   fi
-  JAVA_OPT="${JAVA_OPT} -server -Xms${JVM_XMS} -Xmx${JVM_XMX} -Xmn${JVM_XMN} -XX:MetaspaceSize=${JVM_MS} -XX:MaxMetaspaceSize=${JVM_MMS}"
+  JAVA_OPT="${JAVA_OPT} -server $Xms $Xmx $Xmn $XX_MS $XX_MMS"
   if [[ "${NACOS_DEBUG}" == "y" ]]; then
     JAVA_OPT="${JAVA_OPT} -Xdebug -Xrunjdwp:transport=dt_socket,address=9555,server=y,suspend=n"
   fi
