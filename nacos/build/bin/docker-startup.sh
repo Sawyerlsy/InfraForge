@@ -41,7 +41,7 @@ function join_if_exist() {
 }
 
 function set_db_protocol() {
-    local db_type=$(echo "${SPRING_DATASOURCE_PLATFORM}" | tr '[:upper:]' '[:lower:]')  # 统一转为小写
+    local db_type=$(echo "${SPRING_DATASOURCE_PLATFORM}" | awk '{print tolower($0)}')
     case "${db_type}" in
         gauss|opengauss)
             export DB_PROTOCOL="opengauss"
@@ -57,7 +57,8 @@ function set_db_protocol() {
 }
 
 function set_default_db_port() {
-    case "${SPRING_DATASOURCE_PLATFORM,,}" in
+    local db_type=$(echo "${SPRING_DATASOURCE_PLATFORM}" | awk '{print tolower($0)}')
+    case "${db_type}" in
         gauss|opengauss) export DEFAULT_DB_PORT=8000 ;;
         dm|dameng) export DEFAULT_DB_PORT=5236 ;;
         *) export DEFAULT_DB_PORT=3306 ;;
@@ -67,7 +68,7 @@ function set_default_db_port() {
 function set_default_db_params() {
     [ -n "${DB_PARAM}" ] && return 0
 
-    local db_type=$(echo "${SPRING_DATASOURCE_PLATFORM:-mysql}" | tr '[:upper:]' '[:lower:]')
+    local db_type=$(echo "${SPRING_DATASOURCE_PLATFORM:-mysql}" | awk '{print tolower($0)}')
     local ssl_enabled="${DB_USE_SSL:-false}"
 
     case "${db_type}" in
