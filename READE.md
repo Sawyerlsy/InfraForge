@@ -6,3 +6,16 @@ sudo yum remove podman -y
 # 重启 Docker
 sudo systemctl restart docker
 ```
+
+##### 2、调整open files限制
+```shell
+# 修改limits.conf,当前会话重新登录即可,已经运行的应用需要重启
+cat >> /etc/security/limits.conf << EOF
+* soft nofile 65535
+* hard nofile 65535
+* soft memlock unlimited
+* hard memlock unlimited
+* soft nproc 120000
+* hard nproc 120000
+EOF
+```

@@ -1,4 +1,3 @@
-# 单节点部署时将MODE=cluster改成standalone
 version: '3.8'
 services:
   nacos1:
@@ -7,19 +6,19 @@ services:
     environment:
       - TZ=Asia/Shanghai  # 指定时区
       - PREFER_HOST_MODE=ip
-      - MODE=cluster
-      - SPRING_DATASOURCE_PLATFORM=mysql
-      - DB_HOST=192.168.1.131
-      - DB_NAME=nacos2.2.3
-      - DB_PORT=3306
+      - MODE=cluster  # 单节点部署时将MODE=cluster改成standalone
+      - SPRING_DATASOURCE_PLATFORM=gauss
+      - DB_HOST=10.194.68.203
+      - DB_NAME=nacos
+      - DB_PORT=8000
       - DB_USER=root
-      - DB_PASSWORD=123456
+      - DB_PASSWORD=Gauss_369
       - NACOS_AUTH_ENABLE=true
-      - nacos.core.auth.plugin.nacos.token.secret.key=MjAyMzEwMjcsU2F3eWVyJ3MgbmFjb3Mga2V5IGZvciBoZ2l0cy5QbGVhc2Ugc2V0IGl0Lg==
-      - nacos.core.auth.server.identity.key=MjAyMzEwMjcsU2F3eWVyJ3MgbmFjb3Mga2V5IGZvciBoZ2l0cy5QbGVhc2Ugc2V0IGl0Lg==
-      - nacos.core.auth.server.identity.value=MjAyMzEwMjcsU2F3eWVyJ3MgbmFjb3Mga2V5IGZvciBoZ2l0cy5QbGVhc2Ugc2V0IGl0Lg==
-      - NACOS_SERVERS=192.168.1.133:8848,192.168.1.134:8848,192.168.1.135:8848  # 需要和NACOS_SERVER_IP保持一致
-      - NACOS_SERVER_IP=192.168.1.133
+      - NACOS_AUTH_TOKEN=5Y2B5bm05ZCO55qE5oiR77yM5Lya5oSf6LCi5q2k5Yi75LiN5pS+5byD55qE6Ieq5bex77yb5b2T5oiR6Laz5aSf5aW95pe277yM5LiW55WM5Lya5Li65oiR6K6p6Lev44CC6ICM5q2k5Yi777yM5oiR5q2j5Zyo5Y+Y5b6X5pu05aW977yBU2F3eWVy
+      - NACOS_AUTH_IDENTITY_KEY=5Y2B5bm05ZCO55qE5oiR77yM5Lya5oSf6LCi5q2k5Yi75LiN5pS+5byD55qE6Ieq5bex77yb5b2T5oiR6Laz5aSf5aW95pe277yM5LiW55WM5Lya5Li65oiR6K6p6Lev44CC6ICM5q2k5Yi777yM5oiR5q2j5Zyo5Y+Y5b6X5pu05aW977yBU2F3eWVy
+      - NACOS_AUTH_IDENTITY_VALUE=5Y2B5bm05ZCO55qE5oiR77yM5Lya5oSf6LCi5q2k5Yi75LiN5pS+5byD55qE6Ieq5bex77yb5b2T5oiR6Laz5aSf5aW95pe277yM5LiW55WM5Lya5Li65oiR6K6p6Lev44CC6ICM5q2k5Yi777yM5oiR5q2j5Zyo5Y+Y5b6X5pu05aW977yBU2F3eWVy
+      - NACOS_SERVERS=10.194.68.223:8848,10.194.68.224:8848,10.194.68.225:8848  # 需要和NACOS_SERVER_IP保持一致
+      - NACOS_SERVER_IP=10.194.68.223
       - NACOS_APPLICATION_PORT=8848
     ports:
       - "8848:8848"   # HTTP
