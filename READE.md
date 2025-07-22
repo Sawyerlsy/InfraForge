@@ -19,3 +19,34 @@ cat >> /etc/security/limits.conf << EOF
 * hard nproc 120000
 EOF
 ```
+#### 3、内存敏感型的应用建议关闭swap
+```shell
+# 临时关闭swap
+sudo swapoff -a
+
+# 永久关闭swap 
+sed -i '/swap/d' /etc/fstab # 删除包含swap的行
+
+# 可选：调整内核参数（彻底禁用 Swap 倾向）
+echo "vm.swappiness=0" | sudo tee -a /etc/sysctl.conf  # 禁止内核使用 Swap
+sudo sysctl -p 
+
+# 查看是否已禁用
+free -hm
+swapon --show
+```
+
+#### 4、内核参数调整
+```shell
+# 激进内存策略，避免申请失败，但需防范 OOM
+echo "vm.overcommit_memory = 1" >> /etc/sysctl.conf
+# 显著提升高并发服务的连接容量，需与应用配置协同
+echo "net.core.somaxconn = 10240" >> /etc/sysctl.conf
+sysctl -p
+
+# 验证参数
+cat /proc/sys/vm/overcommit_memory  # 应为 1
+cat /proc/sys/net/core/somaxconn    # 应为 10240
+```
+> - Redis 集群部署时，这两个参数是必备优化项，可减少 Cannot allocate memory 错误和连接超时问题
+> - 若物理内存紧张，优先考虑 vm.overcommit_memory=2 并增加 Swap 空间
