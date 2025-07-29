@@ -1,0 +1,18 @@
+# 使用 Eclipse Temurin 的 Debian 基础镜像
+FROM eclipse-temurin:8-jre
+
+# 设置时区（上海）
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 安装字体工具 & 清理缓存
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends fontconfig && \
+    rm -rf /var/lib/apt/lists/*
+
+# 创建字体目录并复制宋体
+RUN mkdir -p /usr/share/fonts/truetype/custom
+COPY simsun.ttc /usr/share/fonts/truetype/custom/
+
+# 刷新字体缓存
+RUN fc-cache -fv

@@ -39,6 +39,14 @@ appendonly yes                    # 启用AOF持久化
 appendfsync everysec              # 平衡性能与数据安全
 maxmemory 16gb                    # 建议不超过物理内存70%
 maxmemory-policy volatile-lru     # 内存淘汰策略
+aof-use-rdb-preamble yes          # 开启混合持久化（核心配置）
+
+# 配置AOF重写规则（防文件膨胀）
+auto-aof-rewrite-percentage 100  # 文件增长100%触发重写
+auto-aof-rewrite-min-size 64mb   # 最小64MB才触发重写
+
+# 可选：RDB策略（补充备份）
+save 3600 1     # 1小时至少1次修改备份
 
 # 日志与进程
 daemonize yes

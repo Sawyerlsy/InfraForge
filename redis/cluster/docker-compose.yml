@@ -20,7 +20,11 @@ services:
       --cluster-announce-port 7001
       --cluster-announce-bus-port 17001
       --appendonly yes
+      --aof-use-rdb-preamble yes
       --appendfsync everysec
+      --auto-aof-rewrite-percentage 100
+      --auto-aof-rewrite-min-size 64mb
+      --save 3600 1
       --maxmemory 4GB
       --maxmemory-policy volatile-lru
       --min-replicas-to-write 1
@@ -53,7 +57,11 @@ services:
       --cluster-announce-port 7002
       --cluster-announce-bus-port 17002
       --appendonly yes
+      --aof-use-rdb-preamble yes
       --appendfsync everysec
+      --auto-aof-rewrite-percentage 100
+      --auto-aof-rewrite-min-size 64mb
+      --save 3600 1
       --maxmemory 4GB
       --maxmemory-policy volatile-lru
       --min-replicas-to-write 1
@@ -86,7 +94,11 @@ services:
       --cluster-announce-port 7003
       --cluster-announce-bus-port 17003
       --appendonly yes
+      --aof-use-rdb-preamble yes
       --appendfsync everysec
+      --auto-aof-rewrite-percentage 100
+      --auto-aof-rewrite-min-size 64mb
+      --save 3600 1
       --maxmemory 4GB
       --maxmemory-policy volatile-lru
       --min-replicas-to-write 1
