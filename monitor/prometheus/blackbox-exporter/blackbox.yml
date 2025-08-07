@@ -1,0 +1,49 @@
+modules:
+  # HTTP 探测模块（对应 prometheus.yml 中的 http_2xx）
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      # 自定义 HTTP 头（可选）
+      headers:
+        User-Agent: "Blackbox Exporter"
+      # 忽略 TLS 证书验证（可选）
+      # insecure_skip_verify: true
+      # 期望的 HTTP 状态码
+      valid_status_codes: [200, 301, 302]
+
+  # ICMP 探测模块（对应 prometheus.yml 中的 icmp）
+  icmp:
+    prober: icmp
+    timeout: 5s
+    icmp:
+      # 发送的 ICMP 包大小（字节）
+      payload_size: 56
+      # 最大允许的 RTT（毫秒）
+      # max_rtt: 100ms
+      preferred_ip_protocol: "ip4"  # 优先使用 IPv4
+
+  # TCP 探测模块（对应 prometheus.yml 中的 tcp_connect）
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+    # 可选：发送自定义数据（例如 TLS 握手）
+    # send: "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"
+      preferred_ip_protocol: "ip4"
+
+  # DNS 探测模块（对应 prometheus.yml 中的 dns_lookup）
+  dns_lookup:
+    prober: dns
+    timeout: 5s
+    dns:
+      # DNS 查询类型（A、AAAA、CNAME 等）
+      query_name: "example.com"
+      query_type: A
+      preferred_ip_protocol: "ip4"
+      # 期望的 DNS 响应状态码
+      valid_rcodes: [NOERROR]
+#      validate_answer_rrs: # 验证 DNS 响应
+#        fail_if_none_matches: # 若响应不匹配则失败
+#          - "1.2.3.4"           # 期望的 IP 地址（可选）

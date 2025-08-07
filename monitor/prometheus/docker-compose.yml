@@ -1,0 +1,146 @@
+version: '3.8'
+services:
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/rules/:/etc/prometheus/rules/ # 挂载的目录需要设置777权限,否则会提示权限不足
+      - ./prometheus/data:/prometheus  # 挂载的目录需要设置777权限,否则会提示权限不足
+    ports:
+      - "9090:9090"
+    networks:
+      - monitor
+    restart: always
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+
+  grafana:
+    image: grafana/grafana-oss:12.1.0   # 固定版本确保稳定性 [1,3](@ref)
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=hgrica1@
+      #      - GF_SERVER_PROTOCOL=https           # 强制HTTPS [4,8](@ref)
+      - GF_LOG_LEVEL=warn      # 生产环境建议warn级日志，减少磁盘IO [4](@ref)
+      #      - GF_DATABASE_URL=postgres://grafana:${DB_PASSWORD}@postgres/grafana  # 使用PostgreSQL替代SQLite [8](@ref)
+      #      - GF_DATABASE_NAME=grafana
+      #      - GF_DATABASE_USER=root
+      #      - GF_DATABASE_PASSWORD=123456
+      - GF_AUTH_ANONYMOUS_ENABLED=false # 从此项开始为hertzBeat所需
+      - GF_AUTH_PROXY_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_USERS_VIEWERS_CAN_EDIT=true
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+    volumes:
+      - ./grafana:/var/lib/grafana # 挂载的目录需要设置777权限,否则会提示权限不足
+      #- ./ssl/:/etc/grafana/ssl
+    healthcheck:              # 优化健康检查策略
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s       # 避免启动初期误判
+    logging:
+      options:
+        max-size: "100m"
+        max-file: "3"
+    deploy:                  # 资源限制防止OOM
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1'
+    networks:
+      - monitor
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+#    volumes: # 根据需要定义具体的规则
+#      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    restart: always
+    networks:
+      - monitor
+
+  # Node 资源监控（服务器 CPU/内存/磁盘）# 每个服务器部署一个exporter
+  # docker run -d --name node-exporter --network host --pid host --volume /:/host:ro,rslave --restart unless-stopped prom/node-exporter:v1.9.1 --path.rootfs=/host
+#  node_exporter:
+#    image: prom/node-exporter:v1.9.1
+#    container_name: node-exporter
+#    command:
+#      - '--path.rootfs=/host'
+#    network_mode: host
+#    pid: host
+#    restart: unless-stopped
+#    volumes:
+#      - '/:/host:ro,rslave'
+
+  # Nginx监控
+  # docker run -d --name nginx-exporter -p 9113:9113 --restart unless-stopped nginx/nginx-prometheus-exporter:1.4.2 --nginx.scrape-uri=http://10.194.68.221/stub_status
+#  nginx-exporter: # 建议每个Nginx服务器部署一个exporter
+#    image: nginx/nginx-prometheus-exporter:1.4.2
+#    ports:
+#      - "9113:9113"
+#    command:
+#      - "--nginx.scrape-uri=http://10.194.68.221/stub_status"
+#      - "--nginx.scrape-uri=http://10.194.68.222/stub_status"
+#    restart: unless-stopped
+
+  redis-exporter: # Redis集群监控
+    image: oliver006/redis_exporter:v1.55.0
+    container_name: redis-exporter
+    ports:
+      - "9121:9121"
+    environment:
+      # 指定所有集群节点（逗号分隔）
+      REDIS_ADDR: "10.194.68.223:7001,10.194.68.223:7002,10.194.68.223:7003,10.194.68.224:7004,10.194.68.224:7005,10.194.68.224:7006,10.194.68.225:7007,10.194.68.225:7008,10.194.68.225:7009"
+      # 若集群有密码，需添加
+      REDIS_PASSWORD: "hgrica1@"
+    networks:
+      - monitor
+
+  mysql-exporter:
+    image: prom/mysqld-exporter:v0.17.2
+    container_name: mysql-exporter
+    ports:
+      - "9104:9104"
+    volumes:
+      - ./mysql-exporter/.my.cnf:/.my.cnf  # 挂载配置文件到根目录
+    networks:
+      - monitor
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.9.0
+    container_name: kafka-exporter
+    ports:
+      - "9308:9308"
+    command:
+      - "--kafka.server=10.194.68.176:9091"
+      - "--kafka.server=10.194.68.177:9092"
+      - "--kafka.server=10.194.68.178:9093"
+    restart: unless-stopped
+    networks:
+      - monitor
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.27.0
+    container_name: blackbox-exporter
+    ports:
+      - "9115:9115"  # Blackbox Exporter 默认端口
+    volumes:
+      - ./blackbox-exporter:/config  # 挂载配置目录
+    command:
+      - "--config.file=/config/blackbox.yml"  # 指定配置文件路径
+    networks:
+      - monitor
+
+
+networks:
+  monitor:
+    name: monitor

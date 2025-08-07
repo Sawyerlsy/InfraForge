@@ -1,0 +1,20 @@
+global:
+  resolve_timeout: 5m  # 标记告警恢复的超时时间
+  smtp_from: 'sender@example.com'  # 发件邮箱
+  smtp_smarthost: 'smtp.example.com:465'  # SMTP服务器
+  smtp_auth_username: 'sender@example.com'
+  smtp_auth_password: 'your_auth_code'  # 邮箱授权码
+  smtp_require_tls: true  # 启用TLS加密
+
+route:
+  group_by: ['alertname', 'cluster']  # 按标签分组
+  group_wait: 30s  # 初次等待时间
+  group_interval: 5m  # 组内新告警间隔
+  repeat_interval: 4h  # 重复告警间隔
+  receiver: 'team-email'  # 默认接收器
+
+receivers:
+  - name: 'team-email'
+    email_configs:
+      - to: 'team@example.com'  # 收件地址
+        send_resolved: true  # 发送恢复通知

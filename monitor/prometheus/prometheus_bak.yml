@@ -1,0 +1,247 @@
+# my global config
+global:
+  scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+
+# BEGIN ANSIBLE MANAGED BLOCK
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+    - targets: ["localhost:9090"]
+  - job_name: 'linux'
+    static_configs:
+    - targets: ['172.31.0.29:9182']
+      labels:
+        instance: 172.31.0.29
+    - targets: ['172.31.0.27:9182']
+      labels:
+        instance: 172.31.0.27
+    - targets: ['172.31.0.25:9182']
+      labels:
+        instance: 172.31.0.25
+    - targets: ['172.31.0.26:9182']
+      labels:
+        instance: 172.31.0.26
+    - targets: ['172.31.0.21:9182']
+      labels:
+        instance: 172.31.0.21
+    - targets: ['172.31.0.12:9182']
+      labels:
+        instance: 172.31.0.12
+    - targets: ['172.31.0.19:9182']
+      labels:
+        instance: 172.31.0.19
+    - targets: ['172.31.0.13:9182']
+      labels:
+        instance: 172.31.0.13
+    - targets: ['172.31.0.14:9182']
+      labels:
+        instance: 172.31.0.14
+    - targets: ['172.31.0.15:9182']
+      labels:
+        instance: 172.31.0.15
+    - targets: ['172.31.0.16:9182']
+      labels:
+        instance: 172.31.0.16
+    - targets: ['172.31.0.3:9182']
+      labels:
+        instance: 172.31.0.3
+    - targets: ['172.31.0.4:9182']
+      labels:
+        instance: 172.31.0.4
+    - targets: ['172.31.0.5:9182']
+      labels:
+        instance: 172.31.0.5
+    - targets: ['172.31.0.2:9182']
+      labels:
+        instance: 172.31.0.2
+    - targets: ['172.31.0.6:9182']
+      labels:
+        instance: 172.31.0.6
+    - targets: ['172.31.0.7:9182']
+      labels:
+        instance: 172.31.0.7
+    - targets: ['172.31.0.8:9182']
+      labels:
+        instance: 172.31.0.8
+    - targets: ['172.31.0.9:9182']
+      labels:
+        instance: 172.31.0.9
+    - targets: ['172.31.0.10:9182']
+      labels:
+        instance: 172.31.0.10
+    - targets: ['172.31.0.20:9182']
+      labels:
+        instance: 172.31.0.20
+    - targets: ['172.31.0.231:9182']
+      labels:
+        instance: 172.31.0.231
+    - targets: ['172.31.0.17:9182']
+      labels:
+        instance: 172.31.0.17
+    - targets: ['172.31.0.18:9182']
+      labels:
+        instance: 172.31.0.18
+    - targets: ['172.31.0.22:9182']
+      labels:
+        instance: 172.31.0.22
+    - targets: ['172.31.0.23:9182']
+      labels:
+        instance: 172.31.0.23
+    - targets: ['172.31.0.30:9182']
+      labels:
+        instance: 172.31.0.30
+  - job_name: 'nginx'
+    static_configs:
+    - targets: ['172.31.0.20:9113']
+      labels:
+        instance: 172.31.0.9
+    - targets: ['172.31.0.20:9114']
+      labels:
+        instance: 172.31.0.10
+  - job_name: 'kafka'
+    static_configs:
+    - targets: ['172.31.0.20:9308']
+      labels:
+        instance: 172.31.0.6
+  - job_name: 'redis_exporter_targets'
+    static_configs:
+    - targets:
+      - redis://172.31.0.14:6391
+      - redis://172.31.0.14:6392
+      - redis://172.31.0.14:6393
+      - redis://172.31.0.15:6394
+      - redis://172.31.0.15:6395
+      - redis://172.31.0.15:6396
+      - redis://172.31.0.16:6397
+      - redis://172.31.0.16:6398
+      - redis://172.31.0.16:6399
+    metrics_path: /scrape
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 172.31.0.20:9121
+  - job_name: "mysql"
+    static_configs:
+    - targets: ['172.31.0.20:9104']
+      labels:
+        instance: 172.31.0.17
+    - targets: ['172.31.0.20:9105']
+      labels:
+        instance: 172.31.0.18
+  - job_name: 'nacos'
+    metrics_path: '/nacos/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.3:8848']
+      labels:
+        instance: 172.31.0.3
+    - targets: ['172.31.0.4:8848']
+      labels:
+        instance: 172.31.0.4
+    - targets: ['172.31.0.5:8848']
+      labels:
+        instance: 172.31.0.5
+  - job_name: 'offline'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.22:8884']
+  - job_name: 'web-biz'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.22:8881']
+  - job_name: 'index'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.22:8885']
+  - job_name: 'warning'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.22:8883']
+  - job_name: 'realtime'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.22:8882']
+  - job_name: 'flowable'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.22:8889']
+  - job_name: 'standardlog'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.22:8099']
+  - job_name: 'param'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.25:8001','172.31.0.26:8001']
+  - job_name: 'list'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.25:8002','172.31.0.26:8002']
+  - job_name: 'pasm'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.25:8003','172.31.0.26:8003']
+  - job_name: 'charge'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.25:8004','172.31.0.26:8004']
+  - job_name: 'trade'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.25:8005','172.31.0.26:8005']
+  - job_name: 'upload'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.26:8006']
+  - job_name: 'gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.25:8000','172.31.0.26:8000']
+  - job_name: 'log'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+    - targets: ['172.31.0.25:8008','172.31.0.26:8008']
+  - job_name: blackbox_tcp
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets:
+        - 172.31.0.22:8899
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 172.31.0.20:9115 # Blackbox exporter.
+
+
+
+
+  - job_name: 'mongodb'
+    metrics_path: '/metrics'
+    static_configs:
+    - targets: ['172.31.0.20:9216']
+      labels:
+        instance: 172.31.0.19				  
+# END ANSIBLE MANAGED BLOCK

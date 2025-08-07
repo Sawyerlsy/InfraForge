@@ -79,7 +79,7 @@ configure_server() {
     read -p "请输入允许访问的客户端（IP/网段，如 192.168.1.0/24 或 *）： " CLIENT_IP
 
     # 配置exports文件
-    echo "$SHARE_DIR $CLIENT_IP(rw,root_squash,all_squash,sync,anonuid=1000,anongid=1000)" >> /etc/exports
+    echo "$SHARE_DIR $CLIENT_IP(rw,no_root_squash,sync,no_subtree_check)" >> /etc/exports
 
     # 启动服务
     echo "启动NFS相关服务..."

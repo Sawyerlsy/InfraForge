@@ -1,0 +1,182 @@
+# 全局配置
+global:
+  scrape_interval: 15s      # 抓取间隔 [6,8](@ref)
+  evaluation_interval: 15s  # 告警规则评估间隔
+  scrape_timeout: 10s        # 单次抓取超时时间
+
+# 告警配置
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['10.194.68.225:9093']  # 指向Alertmanager服务
+
+# 告警规则路径
+rule_files:
+  - "/etc/prometheus/rules/*.yml"  # 挂载的告警规则目录
+
+scrape_configs:
+  # 监控Prometheus自身
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: [ 'localhost:9090' ]
+
+  # 监控Node资源（服务器指标）每个节点都要部署一个node-exporter
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets:
+         - 10.194.68.221:9100 # 指向node-exporter服务
+         - 10.194.68.222:9100
+         - 10.194.68.223:9100
+         - 10.194.68.224:9100
+         - 10.194.68.225:9100
+
+  # 监控Nginx
+  - job_name: "nginx"
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - 10.194.68.221:9113
+          - 10.194.68.222:9113
+
+  # 监控Redis集群
+  - job_name: 'redis'
+    static_configs:
+      - targets:
+          - 10.194.68.223:7001
+          - 10.194.68.223:7002
+          - 10.194.68.223:7003
+          - 10.194.68.224:7004
+          - 10.194.68.224:7005
+          - 10.194.68.224:7006
+          - 10.194.68.225:7007
+          - 10.194.68.225:7008
+          - 10.194.68.225:7009
+    metrics_path: /scrape
+    relabel_configs:
+      - source_labels: [ __address__ ]
+        target_label: __param_target
+      - source_labels: [ __param_target ]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9121 # 指向Exporter实际主机
+      - source_labels: [ __param_target ]  # 添加角色标签（需配合Exporter自动发现）
+        regex: (.*)
+        target_label: redis_node
+
+  # 监控MySQL
+  - job_name: 'mysql'
+    static_configs:
+      - targets: [ 'localhost:9104' ]
+    metrics_path: /metrics  # 默认路径
+
+  # 监控Kafka
+  - job_name: 'kafka'
+    static_configs:
+      - targets: [ 'localhost:9308' ]
+
+  # Nacos 集群监控
+  - job_name: 'nacos'
+    metrics_path: '/nacos/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.194.68.223:8848','10.194.68.224:8848','10.194.68.225:8848' ]
+
+  # SpringCloud 微服务监控
+  - job_name: 'vs-param'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.194.68.223:8001','10.194.68.224:8001' ]
+  - job_name: 'vs-list'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.194.68.223:8002','10.194.68.224:8002' ]
+  - job_name: 'vs-pasm'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.194.68.223:8003','10.194.68.224:8003' ]
+  - job_name: 'vs-charge'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.194.68.223:8004','10.194.68.224:8004' ]
+  - job_name: 'vs-trade'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.194.68.223:8005','10.194.68.224:8005' ]
+  - job_name: 'vs-upload'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.194.68.224:8006' ]
+  - job_name: 'vs-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.194.68.223:8000','10.194.68.224:8000' ]
+  - job_name: 'vs-log'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.194.68.223:8008']
+
+  - job_name: "blackbox_http"
+    metrics_path: /probe
+    params:
+      module: [ http_2xx ]  # HTTP 探测模块
+    static_configs:
+      - targets:
+          - http://10.194.68.223:9999/dispatch/actuator/health
+          - http://10.194.68.224:9999/dispatch/actuator/health
+    relabel_configs:
+      - source_labels: [ __address__ ]
+        target_label: __param_target
+      - source_labels: [ __param_target ]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9115
+
+  - job_name: "blackbox_icmp"
+    metrics_path: /probe
+    params:
+      module: [ icmp ]  # ICMP 探测模块
+    static_configs:
+      - targets:
+          - 10.194.68.223
+          - 10.194.68.224
+          - 10.194.68.225
+    relabel_configs:
+      - source_labels: [ __address__ ]
+        target_label: __param_target
+      - source_labels: [ __param_target ]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9115
+
+  - job_name: "blackbox_tcp"
+    metrics_path: /probe
+    params:
+      module: [ tcp_connect ]  # TCP 探测模块
+    static_configs:
+      - targets:
+          - 10.194.68.223:22     # SSH 端口
+          - 10.194.65.131:3307   # MySQL 端口
+          - 10.194.68.203:8000     # 高斯
+    relabel_configs:
+      - source_labels: [ __address__ ]
+        target_label: __param_target
+      - source_labels: [ __param_target ]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9115
+
+  - job_name: "blackbox_dns"
+    metrics_path: /probe
+    params:
+      module: [ dns_lookup ]  # DNS 探测模块
+    static_configs:
+      - targets:
+          - baidu.com
+          - google.com
+    relabel_configs:
+      - source_labels: [ __address__ ]
+        target_label: __param_target
+      - source_labels: [ __param_target ]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9115
+
