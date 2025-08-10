@@ -2,48 +2,66 @@ modules:
   # HTTP 探测模块（对应 prometheus.yml 中的 http_2xx）
   http_2xx:
     prober: http
-    timeout: 5s
+    timeout: 10s
     http:
       method: GET
-      # 自定义 HTTP 头（可选）
-      headers:
+      headers: # 自定义 HTTP 头（可选）
         User-Agent: "Blackbox Exporter"
-      # 忽略 TLS 证书验证（可选）
-      # insecure_skip_verify: true
-      # 期望的 HTTP 状态码
-      valid_status_codes: [200, 301, 302]
+      valid_status_codes: [200, 301, 302] # 期望的 HTTP 状态码
+#      fail_if_body_not_matches_regexp: # 校验响应体（可选）
+#        - "status:OK"
+#      tls_config:
+#        insecure_skip_verify: false  # 生产必须验证证书 [4](@ref)
+#        min_version: "TLS12"         # 强制 TLS 1.2+
 
   # ICMP 探测模块（对应 prometheus.yml 中的 icmp）
   icmp:
     prober: icmp
     timeout: 5s
     icmp:
-      # 发送的 ICMP 包大小（字节）
-      payload_size: 56
-      # 最大允许的 RTT（毫秒）
-      # max_rtt: 100ms
+      payload_size: 64 # 发送的 ICMP 包大小（字节）
+      dont_fragment: true  # 检测 MTU 问题
+      ttl: 64
       preferred_ip_protocol: "ip4"  # 优先使用 IPv4
 
   # TCP 探测模块（对应 prometheus.yml 中的 tcp_connect）
   tcp_connect:
     prober: tcp
-    timeout: 5s
+    timeout: 8s
     tcp:
-    # 可选：发送自定义数据（例如 TLS 握手）
-    # send: "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"
       preferred_ip_protocol: "ip4"
+      query_response: # SSH 示例
+        - send: "SSH-2.0-Blackbox\r\n"
+          expect: "^SSH-"
+
+  tcp_mysql:
+    prober: tcp
+    timeout: 8s
+    tcp:
+      preferred_ip_protocol: "ip4"
+      query_response:
+        - send: "\x00\x00\x00\x0a"    # MySQL握手包（简化版）
+          expect: ".\x00\x00\x00"      # 匹配任意响应（确保服务活跃）
 
   # DNS 探测模块（对应 prometheus.yml 中的 dns_lookup）
   dns_lookup:
     prober: dns
     timeout: 5s
     dns:
-      # DNS 查询类型（A、AAAA、CNAME 等）
-      query_name: "example.com"
-      query_type: A
-      preferred_ip_protocol: "ip4"
-      # 期望的 DNS 响应状态码
-      valid_rcodes: [NOERROR]
-#      validate_answer_rrs: # 验证 DNS 响应
-#        fail_if_none_matches: # 若响应不匹配则失败
-#          - "1.2.3.4"           # 期望的 IP 地址（可选）
+      query_name: "{{.Target}}"        # 动态目标域名
+      query_type: A # DNS 查询类型（A、AAAA、CNAME 等）
+      valid_rcodes: [NOERROR] # 期望的 DNS 响应状态码
+      validate_answer_rrs: # 解析结果格式校验
+        fail_if_not_matches_regexp:
+          - "\\d+\\.\\d+\\.\\d+\\.\\d+"  # IPv4 格式
+
+  # HTTPS 证书监控（独立模块）[4](@ref)
+  https_cert_check:
+    prober: http
+    timeout: 15s  # 证书检查需更长时间
+    http:
+      fail_if_not_ssl: true    # 强制 HTTPS
+      valid_status_codes: [ ]    # 忽略状态码，只关注证书
+      tls_config:
+        insecure_skip_verify: false
+        min_version: "TLS12"

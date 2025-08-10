@@ -58,21 +58,21 @@ scrape_configs:
       - source_labels: [ __param_target ]
         target_label: instance
       - target_label: __address__
-        replacement: localhost:9121 # 指向Exporter实际主机
+        replacement: 10.194.68.225:9121 # 指向Exporter实际主机
       - source_labels: [ __param_target ]  # 添加角色标签（需配合Exporter自动发现）
         regex: (.*)
         target_label: redis_node
 
   # 监控MySQL
-  - job_name: 'mysql'
+  - job_name: 'mysql' # 建议每台mysql安装一个mysql exporter
     static_configs:
-      - targets: [ 'localhost:9104' ]
+      - targets: [ '10.194.68.225:9104' ]
     metrics_path: /metrics  # 默认路径
 
   # 监控Kafka
   - job_name: 'kafka'
     static_configs:
-      - targets: [ 'localhost:9308' ]
+      - targets: [ '10.194.68.225:9308' ]
 
   # Nacos 集群监控
   - job_name: 'nacos'
@@ -128,12 +128,31 @@ scrape_configs:
       - source_labels: [ __param_target ]
         target_label: instance
       - target_label: __address__
-        replacement: localhost:9115
+        replacement: 10.194.68.225:9115  # 使用服务名（容器化部署）或 IP:Port
+      - target_label: probe_type
+        replacement: http  # 自定义标签标识协议类型
+
+    # HTTPS 证书过期监控（独立模块）
+#  - job_name: 'blackbox_https_cert'
+#    metrics_path: /probe
+#    params:
+#      module: [ https_cert_check ]  # 需在 blackbox.yml 定义
+#    file_sd_configs:
+#      - files: [ '/etc/prometheus/targets/https_cert_targets.yml' ]
+#    relabel_configs:
+#      - source_labels: [ __address__ ]
+#        target_label: __param_target
+#      - source_labels: [ __param_target ]
+#        target_label: instance
+#      - target_label: __address__
+#        replacement: 10.194.68.225:9115  # 使用服务名（容器化部署）或 IP:Port
+#      - target_label: probe_type
+#        replacement: https_cert  # 自定义标签标识协议类型
 
   - job_name: "blackbox_icmp"
     metrics_path: /probe
     params:
-      module: [ icmp ]  # ICMP 探测模块
+      module: [ icmp ]
     static_configs:
       - targets:
           - 10.194.68.223
@@ -145,24 +164,43 @@ scrape_configs:
       - source_labels: [ __param_target ]
         target_label: instance
       - target_label: __address__
-        replacement: localhost:9115
+        replacement: 10.194.68.225:9115  # 使用服务名（容器化部署）或 IP:Port
+      - target_label: probe_type
+        replacement: icmp  # 自定义标签标识协议类型
 
-  - job_name: "blackbox_tcp"
+  - job_name: "blackbox_ssh"
     metrics_path: /probe
     params:
-      module: [ tcp_connect ]  # TCP 探测模块
+      module: [ tcp_connect ]  # 要与blackbox.yml定义的名字保持一致
     static_configs:
       - targets:
           - 10.194.68.223:22     # SSH 端口
-          - 10.194.65.131:3307   # MySQL 端口
-          - 10.194.68.203:8000     # 高斯
     relabel_configs:
       - source_labels: [ __address__ ]
         target_label: __param_target
       - source_labels: [ __param_target ]
         target_label: instance
       - target_label: __address__
-        replacement: localhost:9115
+        replacement: 10.194.68.225:9115  # 使用服务名（容器化部署）或 IP:Port
+      - target_label: probe_type
+        replacement: tcp  # 自定义标签标识协议类型
+
+  - job_name: "blackbox_mysql"
+    metrics_path: /probe
+    params:
+      module: [ tcp_mysql ]  # 要与blackbox.yml定义的名字保持一致
+    static_configs:
+      - targets:
+          - 10.194.65.131:3307
+    relabel_configs:
+      - source_labels: [ __address__ ]
+        target_label: __param_target
+      - source_labels: [ __param_target ]
+        target_label: instance
+      - target_label: __address__
+        replacement: 10.194.68.225:9115  # 使用服务名（容器化部署）或 IP:Port
+      - target_label: probe_type
+        replacement: tcp  # 自定义标签标识协议类型
 
   - job_name: "blackbox_dns"
     metrics_path: /probe
@@ -178,5 +216,12 @@ scrape_configs:
       - source_labels: [ __param_target ]
         target_label: instance
       - target_label: __address__
-        replacement: localhost:9115
+        replacement: 10.194.68.225:9115  # 使用服务名（容器化部署）或 IP:Port
+      - target_label: probe_type
+        replacement: dns  # 自定义标签标识协议类型
+
+  # ========== 监控 Blackbox Exporter 自身 ==========
+  - job_name: 'blackbox_exporter_health'
+    static_configs:
+      - targets: [ '10.194.68.225:9115' ]
 

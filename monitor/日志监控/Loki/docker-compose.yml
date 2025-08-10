@@ -1,0 +1,11 @@
+version: "3"
+services:
+  loki:
+    container_name: loki
+    image: grafana/loki:3.5
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/config.yml -target=all
+    volumes:
+      - ./config:/etc/loki
+      - ./data:/loki # 需要设置777权限
