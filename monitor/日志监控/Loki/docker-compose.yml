@@ -9,3 +9,11 @@ services:
     volumes:
       - ./config:/etc/loki
       - ./data:/loki # 需要设置777权限
+    # 增加内存限制（重要！）
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+
+# mkdir -p data
+# chmod 777 data

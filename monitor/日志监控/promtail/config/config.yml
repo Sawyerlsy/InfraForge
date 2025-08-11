@@ -20,58 +20,44 @@ clients:
 
 # ===== 日志抓取任务配置 =====
 scrape_configs:
-  - job_name: fee-server-logs
+  - job_name: emtc-server-logs # 任务1
     pipeline_stages: # 日志处理流水线
-      # 前置空行过滤（立即执行）
+      # 1. 过滤严格空行（仅保留前置过滤）
       - drop:
           expression: '^$'
-      # 防止业务日志中次级时间戳（如"2024-11-12 14:28:19.853"）干扰合并，精确匹配主日志行头（时间戳+级别+线程标识）
-      - multiline: # 合并多行日志（如Java异常栈）
+
+      # 2. 合并多行日志（主日志行 + 堆栈）
+      - multiline:
           firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
-          max_wait: 30s   # 等待后续行的最大时间（超时后发送）
-          max_lines: 500  # 限制单条日志最大行数，避免内存溢出
-          # 二级合并
+          max_wait_time: 3s
+          max_lines: 100
           stages:
             - multiline:
                 firstline: '^\s*(at|Caused by)'
-                max_wait: 5s
+                max_wait_time: 3s  # 子级超时与主级一致
 
-      - regex:  # 结构化解析日志字段
-          expression: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\w+):(?P<line>\d+)\s+:(?P<log_body>.*)'
-
-      # 异常堆栈检测
+      # 3. 正则解析日志字段（支持多行匹配）
       - regex:
-          expression: '(?s)(?P<has_exception>(at|Caused by).*)'
-          source: log_body
+          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\w+):(?P<line>\d+)\s+:(?P<log_body>.*)'
 
-      # 堆栈清洗（统一缩进）
-      - regex:
-          expression: '\s+at\s+'
-          replace: '  at '
-
-      # 动态字段重组
-      - template:
-          source: log_body
-          template: |
-            {{ if and .has_exception (ne .has_exception "") }}
-              {{ .log_body | Trim }}
-            {{ else }}
-              {{ .log_body }}
-            {{ end }}
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.999'  # 格式需与日志时间戳完全匹配
+          location: 'Asia/Shanghai'
 
       # 标签化策略（安全低基数）
       - labels: # 提取关键字段为标签，用于快速过滤日志流（如{level="ERROR"}），适合有限枚举值（如env、host）.而如method、class，应通过日志内容过滤（如{job="fee-server"} |= "getDeviceTrans"），避免污染索引
           level: # 按日志级别过滤（如{level="ERROR"}）
-          exception_present: '{{ not (eq .has_exception "") }}'  # 有堆栈则为true
+          host:
 
-#      - output:
-#          source: log_body
+    #      - output: # 仅仅输出指定内容
+    #          source: log_body
 
 
     static_configs:
       - targets: [localhost]  # 目标主机列表（本地采集时固定为 localhost）
         labels:
-          job: fee-server         # 服务标识（必填）
+          job: emtc-server         # 服务标识（必填）
           env: prod               # 环境标签（如测试/生产）
           zone: hebei
           host: "server-223"      # 低基数主机标识（替代高基数 IP）
@@ -79,6 +65,8 @@ scrape_configs:
           __path_exclude__: '.*\.(?i)gz$'   # 排除压缩文件（避免重复采集）
 
 #  使用方式：
-#  {job="fee-server", exception_present="true"}  # 查所有异常（无论级别）
-#  {job="fee-server", level="WARN"} |= "SocketTimeout"  # 结合内容过滤
-# {job="fee-server"} | json | root_cause != ""
+# 按标签查询：{job="fee-server", level="WARN"}
+# 排除特定标签：{job="fee-server"} - {level="DEBUG"}
+# 查找包含 SocketTimeout 的日志：{job="fee-server"} |~ "SocketTimeout"
+# 提取json字段,查找包含error_code的： {job="fee-server"} | json | error_code  != ""
+# 查找 status=404 且 method=GET 的日志：  {job="fee-server"} | json | status = "404" and method = "GET"

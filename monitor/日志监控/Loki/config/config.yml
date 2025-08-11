@@ -1,29 +1,65 @@
-auth_enabled: false
-
+# ===== 全局配置 =====
+auth_enabled: false  # 单节点禁用认证
 server:
   http_listen_port: 3100
+  grpc_listen_port: 9096  # 启用gRPC提升内部通信效率
 
 common:
   instance_addr: 127.0.0.1
   path_prefix: /loki
   storage:
     filesystem:
-      chunks_directory: /loki/chunks
-      rules_directory: /loki/rules
-  replication_factor: 1
+      chunks_directory: /loki/chunks  # 数据块存储路径（需挂载持久化卷）
+      rules_directory: /loki/rules    # 规则目录
   ring:
     kvstore:
-      store: inmemory
+      store: inmemory  # 单节点使用内存存储
+  replication_factor: 1
 
+# ===== 存储与保留策略 =====
 schema_config:
   configs:
     - from: 2020-10-24
-      store: tsdb
+      store: tsdb         # TSDB索引（比BoltDB查询更快）
       object_store: filesystem
       schema: v13
       index:
         prefix: index_
-        period: 24h
+        period: 24h       # 索引分片周期（需为24h的整数倍）
 
 ruler:
   alertmanager_url: http://localhost:9093
+
+limits_config:
+  retention_period: 2160h # 保留90天（3个月）
+  max_query_lookback: 2160h  # 允许查询90天内数据（解决Grafana报错）
+  max_streams_per_user: 50000  # 限制日志流数量（防标签爆炸）
+  ingestion_rate_mb: 50       # 写入吞吐量限制（单节点建议≤50MB/s）
+  ingestion_burst_size_mb: 100  # 突发写入容忍度
+  split_queries_by_interval: 24h  # 按天拆分查询（加速大范围查询）
+  query_timeout: 10m
+
+table_manager:
+  retention_deletes_enabled: true
+  retention_period: 2160h
+
+# ===== 查询性能优化 =====
+querier:
+  max_concurrent: 10       # 并行查询数（按CPU核数调整）
+  query_ingesters_within: 3h  # 查询3小时内日志时访问Ingester内存数据
+
+query_range:
+  results_cache:
+    cache:
+      embedded_cache:       # 本地结果缓存
+        enabled: true
+        max_size_mb: 512    # 缓存大小（建议内存的10-20%）
+
+# ===== 写入与内存管理 =====
+ingester:
+  lifecycler:
+    ring:
+      replication_factor: 1  # 单节点复制因子为1
+  chunk_idle_period: 30m     # 空闲块刷新间隔（降低内存占用）
+  chunk_target_size: 10485760     # 块目标大小（平衡IO与内存）
+  max_chunk_age: 1h          # 内存中最大块存活时间
