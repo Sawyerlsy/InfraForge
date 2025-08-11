@@ -64,6 +64,50 @@ scrape_configs:
           __path__: /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/full/**/*.log  # 递归匹配所有子目录的 .log 文件
           __path_exclude__: '.*\.(?i)gz$'   # 排除压缩文件（避免重复采集）
 
+  - job_name: parameter-server-logs # 任务1
+    pipeline_stages: # 日志处理流水线
+      # 1. 过滤严格空行（仅保留前置过滤）
+      - drop:
+          expression: '^$'
+
+      # 2. 合并多行日志（主日志行 + 堆栈）
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          max_wait_time: 3s
+          max_lines: 100
+          stages:
+            - multiline:
+                firstline: '^\s*(at|Caused by)'
+                max_wait_time: 3s  # 子级超时与主级一致
+
+      # 3. 正则解析日志字段（支持多行匹配）
+      - regex:
+          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\w+):(?P<line>\d+)\s+:(?P<log_body>.*)'
+
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.999'  # 格式需与日志时间戳完全匹配
+          location: 'Asia/Shanghai'
+
+      # 标签化策略（安全低基数）
+      - labels: # 提取关键字段为标签，用于快速过滤日志流（如{level="ERROR"}），适合有限枚举值（如env、host）.而如method、class，应通过日志内容过滤（如{job="fee-server"} |= "getDeviceTrans"），避免污染索引
+          level: # 按日志级别过滤（如{level="ERROR"}）
+          host:
+
+    #      - output: # 仅仅输出指定内容
+    #          source: log_body
+
+
+    static_configs:
+      - targets: [ localhost ]  # 目标主机列表（本地采集时固定为 localhost）
+        labels:
+          job: parameter-server         # 服务标识（必填）
+          env: prod               # 环境标签（如测试/生产）
+          zone: hebei
+          host: "server-223"      # 低基数主机标识（替代高基数 IP）
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/parameter-server/full/**/*.log  # 递归匹配所有子目录的 .log 文件
+          __path_exclude__: '.*\.(?i)gz$'   # 排除压缩文件（避免重复采集）
+
 #  使用方式：
 # 按标签查询：{job="fee-server", level="WARN"}
 # 排除特定标签：{job="fee-server"} - {level="DEBUG"}
