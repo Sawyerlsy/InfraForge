@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   nacos1:
-    image: sawyerlsy/nacos:v2.2.3-local
+    image: sawyerlsy/nacos:v2.5.1-local
     container_name: nacos-node1
     network_mode: host # 默认为bridge,这里直接使用宿主机网络栈，避免NAT转换,提高吞吐量和降低延迟
     environment:

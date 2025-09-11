@@ -1,0 +1,32 @@
+### Docker资源地址
+https://download.docker.com/linux/static/stable
+
+### Docker Compose资源地址
+https://github.com/docker/compose/releases
+
+## 常用配置
+
+### 1、Docker日志轮转
+```shell
+# 添加json配置
+vim /etc/docker/daemon.json
+
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m",
+    "max-file": "3"
+  }
+}
+
+# 重新加载服务配置和重启docker
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+# 查看 Docker 守护进程的默认日志驱动
+docker info --format '{{.LoggingDriver}}'
+
+# 查看容器的具体日志配置
+docker inspect <container_id> | grep LogConfig -A 10
+```
+> - 注意：日志轮转配置后仅对之后新增的容器生效,旧容器的日志不会被轮转

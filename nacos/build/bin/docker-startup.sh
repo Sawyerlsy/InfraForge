@@ -18,7 +18,7 @@
 set -x
 export CUSTOM_SEARCH_NAMES="application"
 export CUSTOM_SEARCH_LOCATIONS=file:${BASE_DIR}/conf/
-export MEMBER_LIST="$MEMBER_LIST"
+export MEMBER_LIST=""
 PLUGINS_DIR="/home/nacos/plugins/peer-finder"
 function print_servers() {
    if [[ ! -d "${PLUGINS_DIR}" ]]; then
@@ -32,16 +32,8 @@ function print_servers() {
   fi
 }
 
-function join_if_exist() {
-    if [ -n "$2" ]; then
-        echo "$1$2"
-    else
-        echo ""
-    fi
-}
-
 function set_db_protocol() {
-    local db_type=$(echo "${SPRING_DATASOURCE_PLATFORM}" | awk '{print tolower($0)}')
+    local db_type=$(echo "${SPRING_DATASOURCE_PLATFORM}" | tr '[:upper:]' '[:lower:]')  # 统一转为小写
     case "${db_type}" in
         gauss|opengauss)
             export DB_PROTOCOL="opengauss"
@@ -57,8 +49,7 @@ function set_db_protocol() {
 }
 
 function set_default_db_port() {
-    local db_type=$(echo "${SPRING_DATASOURCE_PLATFORM}" | awk '{print tolower($0)}')
-    case "${db_type}" in
+    case "${SPRING_DATASOURCE_PLATFORM,,}" in
         gauss|opengauss) export DEFAULT_DB_PORT=8000 ;;
         dm|dameng) export DEFAULT_DB_PORT=5236 ;;
         *) export DEFAULT_DB_PORT=3306 ;;
@@ -68,7 +59,7 @@ function set_default_db_port() {
 function set_default_db_params() {
     [ -n "${DB_PARAM}" ] && return 0
 
-    local db_type=$(echo "${SPRING_DATASOURCE_PLATFORM:-mysql}" | awk '{print tolower($0)}')
+    local db_type=$(echo "${SPRING_DATASOURCE_PLATFORM:-mysql}" | tr '[:upper:]' '[:lower:]')
     local ssl_enabled="${DB_USE_SSL:-false}"
 
     case "${db_type}" in
@@ -97,21 +88,15 @@ function set_default_db_params() {
 #===========================================================================================
 # JVM Configuration
 #===========================================================================================
-Xms=$(join_if_exist "-Xms" ${JVM_XMS})
-Xmx=$(join_if_exist "-Xmx" ${JVM_XMX})
-Xmn=$(join_if_exist "-Xmn" ${JVM_XMN})
-XX_MS=$(join_if_exist "-XX:MetaspaceSize=" ${JVM_MS})
-XX_MMS=$(join_if_exist "-XX:MaxMetaspaceSize=" ${JVM_MMS})
-
-JAVA_OPT="${JAVA_OPT} -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8 "
+JAVA_OPT="${JAVA_OPT} -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -XX:-UseParNewGC"
 if [[ "${MODE}" == "standalone" ]]; then
-  JAVA_OPT="${JAVA_OPT} $Xms $Xmx $Xmn"
+  JAVA_OPT="${JAVA_OPT} -Xms${JVM_XMS} -Xmx${JVM_XMX} -Xmn${JVM_XMN}"
   JAVA_OPT="${JAVA_OPT} -Dnacos.standalone=true"
 else
   if [[ "${EMBEDDED_STORAGE}" == "embedded" ]]; then
     JAVA_OPT="${JAVA_OPT} -DembeddedStorage=true"
   fi
-  JAVA_OPT="${JAVA_OPT} -server $Xms $Xmx $Xmn $XX_MS $XX_MMS"
+  JAVA_OPT="${JAVA_OPT} -server -Xms${JVM_XMS} -Xmx${JVM_XMX} -Xmn${JVM_XMN} -XX:MetaspaceSize=${JVM_MS} -XX:MaxMetaspaceSize=${JVM_MMS}"
   if [[ "${NACOS_DEBUG}" == "y" ]]; then
     JAVA_OPT="${JAVA_OPT} -Xdebug -Xrunjdwp:transport=dt_socket,address=9555,server=y,suspend=n"
   fi
