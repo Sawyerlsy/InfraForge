@@ -24,7 +24,7 @@ RUN apk add --no-cache openjdk8-jre-base curl iputils ncurses vim libcurl bash
 ENV MODE="cluster" \
     PREFER_HOST_MODE="ip"\
     BASE_DIR="/home/nacos" \
-    CLASSPATH=".:/home/nacos/conf:$CLASSPATH" \
+    CLASSPATH=".:/home/nacos/conf" \
     CLUSTER_CONF="/home/nacos/conf/cluster.conf" \
     FUNCTION_MODE="all" \
     JAVA_HOME="/usr/lib/jvm/java-1.8-openjdk" \
@@ -62,4 +62,4 @@ RUN mkdir -p logs \
     && chmod +x bin/docker-startup.sh
 
 EXPOSE 8848
-ENTRYPOINT ["sh","bin/docker-startup.sh"]
+ENTRYPOINT ["bash","bin/docker-startup.sh"]
