@@ -62,7 +62,42 @@ scrape_configs:
           zone: hebei
           host: "server-223"      # 低基数主机标识（替代高基数 IP）
           __path__: /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/full/**/*.log  # 递归匹配所有子目录的 .log 文件
-          __path_exclude__: '.*\.(?i)gz$'   # 排除压缩文件（避免重复采集）
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/full/**/*.gz   # 排除压缩文件（避免重复采集）
+
+  - job_name: parameter-server-logs # 任务1
+    pipeline_stages:
+      - drop:
+          expression: '^$'
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          max_wait_time: 3s
+          max_lines: 100
+          stages:
+            - multiline:
+                firstline: '^\s*(at|Caused by)'
+                max_wait_time: 3s
+      - regex:
+          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\w+):(?P<line>\d+)\s+:(?P<log_body>.*)'
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.999'
+          location: 'Asia/Shanghai'
+      - labels:
+          level:
+          host:
+
+    static_configs:
+      - targets: [ localhost ] # targets可配置多个
+        labels:
+          zone: hebei
+          app: virtual-station-multi
+          service: parameter-server
+          env: prod
+          host: "server-223"
+          __path__: /virtual-station-logs/fee-server/**/*.log # 使用双星号通配符递归匹配所有日志文件
+          # __path__: /virtual-station-logs/fee-server/{debug,info,warn,debug}/*.log # 使用双星号通配符递归匹配所有日志文件
+          # 排除规则：压缩文件、带日期的轮转文件，以及 gc 目录下的所有文件
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-trade/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
 
 #  使用方式：
 # 按标签查询：{job="fee-server", level="WARN"}

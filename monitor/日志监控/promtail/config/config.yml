@@ -51,7 +51,7 @@ scrape_configs:
           env: prod
           host: "server-223"
           __path__: /var/lib/docker/volumes/virtual-station-logs/_data/parameter-server/full/log_full.log
-          __path_exclude__: '.*\.(?i)gz$'
+
 
   - job_name: fee-server-logs # 任务1
     pipeline_stages:
@@ -84,7 +84,7 @@ scrape_configs:
           env: prod
           host: "server-223"
           __path__: /var/lib/docker/volumes/virtual-station-logs/_data/fee-server/full/log_full.log
-          __path_exclude__: '.*\.(?i)gz$'
+
 
 
   - job_name: namelist-server-logs # 任务1
@@ -118,7 +118,7 @@ scrape_configs:
           env: prod
           host: "server-223"
           __path__: /var/lib/docker/volumes/virtual-station-logs/_data/namelist-server/full/log_full.log
-          __path_exclude__: '.*\.(?i)gz$'
+
 
   - job_name: emtc-server-logs # 任务1
     pipeline_stages:
@@ -151,7 +151,7 @@ scrape_configs:
           env: prod
           host: "server-223"
           __path__: /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/full/log_full.log
-          __path_exclude__: '.*\.(?i)gz$'
+
 
   - job_name: gateway-server-logs # 任务1
     pipeline_stages:
@@ -184,7 +184,7 @@ scrape_configs:
           env: prod
           host: "server-223"
           __path__: /var/lib/docker/volumes/virtual-station-logs/_data/gateway-server/full/log_full.log
-          __path_exclude__: '.*\.(?i)gz$'
+
 
 
   - job_name: log-server-logs # 任务1
@@ -218,7 +218,7 @@ scrape_configs:
           env: prod
           host: "server-223"
           __path__: /var/lib/docker/volumes/virtual-station-logs/_data/log-server/full/log_full.log
-          __path_exclude__: '.*\.(?i)gz$'
+
 
 
   - job_name: psam-server-logs # 任务1
@@ -252,7 +252,7 @@ scrape_configs:
           env: prod
           host: "server-223"
           __path__: /var/lib/docker/volumes/virtual-station-logs/_data/psam-server/full/log_full.log
-          __path_exclude__: '.*\.(?i)gz$'
+
 
   - job_name: upload-server-logs # 任务1
     pipeline_stages:
@@ -285,7 +285,7 @@ scrape_configs:
           env: prod
           host: "server-223"
           __path__: /var/lib/docker/volumes/virtual-station-logs/_data/upload-server/full/log_full.log
-          __path_exclude__: '.*\.(?i)gz$'
+
 
 #  使用方式：
 # 按标签查询：{job="fee-server", level="WARN"}
