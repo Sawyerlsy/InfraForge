@@ -64,8 +64,18 @@ scrape_configs:
           __path__: /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/full/**/*.log  # 递归匹配所有子目录的 .log 文件
           __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/full/**/*.gz   # 排除压缩文件（避免重复采集）
 
-  - job_name: parameter-server-logs # 任务1
+  - job_name: virtual-station-trade-logs
     pipeline_stages:
+      # 第一阶段：从文件路径中提取目录名
+      - regex:
+          source: filename
+          expression: '.*/virtual-station-trade/(?P<directory>[^/]+)/all/logall\.log$'
+
+      # 第二阶段：将提取的目录名设置为标签
+      - labels:
+          directory:
+
+      # 第三阶段：原有的日志处理流程
       - drop:
           expression: '^$'
       - multiline:
@@ -87,16 +97,14 @@ scrape_configs:
           host:
 
     static_configs:
-      - targets: [ localhost ] # targets可配置多个
+      - targets: [localhost]
         labels:
-          zone: hebei
-          app: virtual-station-multi
-          service: parameter-server
+          zone: guangdong
+          app: virtual-station-old
+          service: virtual-station-trade
           env: prod
-          host: "server-223"
-          __path__: /virtual-station-logs/fee-server/**/*.log # 使用双星号通配符递归匹配所有日志文件
-          # __path__: /virtual-station-logs/fee-server/{debug,info,warn,debug}/*.log # 使用双星号通配符递归匹配所有日志文件
-          # 排除规则：压缩文件、带日期的轮转文件，以及 gc 目录下的所有文件
+          host: "server-175"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-trade/**/all/logall.log
           __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-trade/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
 
 #  使用方式：

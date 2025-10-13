@@ -20,7 +20,7 @@ clients:
 
 # ===== 日志抓取任务配置 =====
 scrape_configs:
-  - job_name: parameter-server-logs # 任务1
+  - job_name: virtual-station-param-logs # 任务1
     pipeline_stages:
       - drop:
           expression: '^$'
@@ -45,15 +45,15 @@ scrape_configs:
     static_configs:
       - targets: [ localhost ]
         labels:
-          zone: hebei
-          app: virtual-station-multi
-          service: parameter-server
+          zone: guangdong
+          app: virtual-station-old
+          service: virtual-station-param
           env: prod
-          host: "server-223"
-          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/parameter-server/full/log_full.log
+          host: "server-175"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-param/{debug,info,warn,error}/*.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-param/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
 
-
-  - job_name: fee-server-logs # 任务1
+  - job_name: virtual-station-charge-logs # 任务1
     pipeline_stages:
       - drop:
           expression: '^$'
@@ -78,16 +78,16 @@ scrape_configs:
     static_configs:
       - targets: [ localhost ]
         labels:
-          zone: hebei
-          app: virtual-station-multi
-          service: fee-server
+          zone: guangdong
+          app: virtual-station-old
+          service: virtual-station-charge
           env: prod
-          host: "server-223"
-          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/fee-server/full/log_full.log
+          host: "server-175"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-charge/**/*.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-charge/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
 
 
-
-  - job_name: namelist-server-logs # 任务1
+  - job_name: virtual-station-list-logs # 任务1
     pipeline_stages:
       - drop:
           expression: '^$'
@@ -112,15 +112,58 @@ scrape_configs:
     static_configs:
       - targets: [ localhost ]
         labels:
-          zone: hebei
-          app: virtual-station-multi
-          service: namelist-server
+          zone: guangdong
+          app: virtual-station-old
+          service: virtual-station-list
           env: prod
-          host: "server-223"
-          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/namelist-server/full/log_full.log
+          host: "server-175"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-list/**/*.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-list/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
 
+  - job_name: virtual-station-trade-logs
+    pipeline_stages:
+      # 第一阶段：从文件路径中提取目录名
+      - regex:
+          source: filename
+          expression: '.*/virtual-station-trade/(?P<directory>[^/]+)/all/logall\.log$'
 
-  - job_name: emtc-server-logs # 任务1
+      # 第二阶段：将提取的目录名设置为标签
+      - labels:
+          directory:
+
+      # 第三阶段：原有的日志处理流程
+      - drop:
+          expression: '^$'
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          max_wait_time: 3s
+          max_lines: 100
+          stages:
+            - multiline:
+                firstline: '^\s*(at|Caused by)'
+                max_wait_time: 3s
+      - regex:
+          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\w+):(?P<line>\d+)\s+:(?P<log_body>.*)'
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.999'
+          location: 'Asia/Shanghai'
+      - labels:
+          level:
+          host:
+
+    static_configs:
+      - targets: [localhost]
+        labels:
+          zone: guangdong
+          app: virtual-station-old
+          service: virtual-station-trade
+          env: prod
+          host: "server-175"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-trade/**/all/logall.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-trade/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
+
+  - job_name: virtual-station-gateway-logs # 任务1
     pipeline_stages:
       - drop:
           expression: '^$'
@@ -145,15 +188,15 @@ scrape_configs:
     static_configs:
       - targets: [ localhost ]
         labels:
-          zone: hebei
-          app: virtual-station-multi
-          service: emtc-server
+          zone: guangdong
+          app: virtual-station-old
+          service: virtual-station-gateway
           env: prod
-          host: "server-223"
-          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/full/log_full.log
+          host: "server-175"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-gateway/**/*.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-gateway/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
 
-
-  - job_name: gateway-server-logs # 任务1
+  - job_name: virtual-station-psam-logs # 任务1
     pipeline_stages:
       - drop:
           expression: '^$'
@@ -178,16 +221,15 @@ scrape_configs:
     static_configs:
       - targets: [ localhost ]
         labels:
-          zone: hebei
-          app: virtual-station-multi
-          service: gateway-server
+          zone: guangdong
+          app: virtual-station-old
+          service: virtual-station-psam
           env: prod
-          host: "server-223"
-          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/gateway-server/full/log_full.log
+          host: "server-175"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-psam/**/*.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-psam/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
 
-
-
-  - job_name: log-server-logs # 任务1
+  - job_name: virtual-station-upload-logs # 任务1
     pipeline_stages:
       - drop:
           expression: '^$'
@@ -212,80 +254,13 @@ scrape_configs:
     static_configs:
       - targets: [ localhost ]
         labels:
-          zone: hebei
-          app: virtual-station-multi
-          service: log-server
+          zone: guangdong
+          app: virtual-station-old
+          service: virtual-station-upload
           env: prod
-          host: "server-223"
-          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/log-server/full/log_full.log
-
-
-
-  - job_name: psam-server-logs # 任务1
-    pipeline_stages:
-      - drop:
-          expression: '^$'
-      - multiline:
-          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
-          max_wait_time: 3s
-          max_lines: 100
-          stages:
-            - multiline:
-                firstline: '^\s*(at|Caused by)'
-                max_wait_time: 3s
-      - regex:
-          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\w+):(?P<line>\d+)\s+:(?P<log_body>.*)'
-      - timestamp:
-          source: timestamp
-          format: '2006-01-02 15:04:05.999'
-          location: 'Asia/Shanghai'
-      - labels:
-          level:
-          host:
-
-    static_configs:
-      - targets: [ localhost ]
-        labels:
-          zone: hebei
-          app: virtual-station-multi
-          service: psam-server
-          env: prod
-          host: "server-223"
-          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/psam-server/full/log_full.log
-
-
-  - job_name: upload-server-logs # 任务1
-    pipeline_stages:
-      - drop:
-          expression: '^$'
-      - multiline:
-          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
-          max_wait_time: 3s
-          max_lines: 100
-          stages:
-            - multiline:
-                firstline: '^\s*(at|Caused by)'
-                max_wait_time: 3s
-      - regex:
-          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\w+):(?P<line>\d+)\s+:(?P<log_body>.*)'
-      - timestamp:
-          source: timestamp
-          format: '2006-01-02 15:04:05.999'
-          location: 'Asia/Shanghai'
-      - labels:
-          level:
-          host:
-
-    static_configs:
-      - targets: [ localhost ]
-        labels:
-          zone: hebei
-          app: virtual-station-multi
-          service: upload-server
-          env: prod
-          host: "server-223"
-          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/upload-server/full/log_full.log
-
+          host: "server-175"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-upload/**/*.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-upload/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
 
 #  使用方式：
 # 按标签查询：{job="fee-server", level="WARN"}
