@@ -1,25 +1,44 @@
-# ===== 全局配置 =====
-auth_enabled: false  # 单节点禁用认证
+###############################
+# 1. 认证与安全配置
+###############################
+auth_enabled: false  # 生产环境建议改为 true 并配置认证
+
+###############################
+# 2. 服务器全局配置
+###############################
 server:
   http_listen_port: 3100
-  grpc_listen_port: 9096  # 启用gRPC提升内部通信效率
+  grpc_listen_port: 9096   # gRPC server listen port.
+  grpc_server_max_recv_msg_size: 104857600   # 限制此服务器可以接收的 gRPC 消息的大小（字节）。
+  grpc_server_max_send_msg_size: 104857600   # 限制此服务器可以发送的 gRPC 消息的大小（字节）。
+  grpc_server_max_concurrent_streams: 0     # 限制 gRPC 调用的并发流数（0 = 无限制）
+  graceful_shutdown_timeout: 300s   # 正常关机的超时| default = 30s
+  http_server_read_timeout: 90s    # HTTP服务器的读取超时| default = 30s
+  http_server_write_timeout: 90s   # HTTP服务器的读取超时| default = 30s
+  http_server_idle_timeout: 300s
 
+###############################
+# 3. 公共配置 (Common)
+###############################
 common:
-  instance_addr: 127.0.0.1
+  # instance_addr 需设置为本机外部可访问IP，集群环境下不能是127.0.0.1
+  instance_addr: 127.0.0.1  # 请替换为实际IP
   path_prefix: /loki
+  replication_factor: 1      # 单节点设为1，集群需增加
   storage:
     filesystem:
       chunks_directory: /loki/chunks  # 数据块存储路径（需挂载持久化卷）
       rules_directory: /loki/rules    # 规则目录
   ring:
     kvstore:
-      store: inmemory  # 单节点使用内存存储
-  replication_factor: 1
+      store: inmemory        # 单节点用inmemory，集群用memberlist/consul
 
-# ===== 存储与保留策略 =====
+###############################
+# 4. 数据模式配置
+###############################
 schema_config:
   configs:
-    - from: 2020-10-24
+    - from: 2022-04-16 # 新的数据存储模式（Schema）开始生效的起始时间点​​。这主要是为了支持 Loki 的存储架构能够平滑升级或变更
       store: tsdb         # TSDB索引（比BoltDB查询更快）
       object_store: filesystem
       schema: v13
@@ -27,23 +46,72 @@ schema_config:
         prefix: index_
         period: 24h       # 索引分片周期（需为24h的整数倍）
 
-ruler:
-  alertmanager_url: http://localhost:9093
+###############################
+# 5. 存储配置 (Storage)
+###############################
+storage_config:
+  # TSDB 索引配置
+  tsdb_shipper:
+    active_index_directory: /loki/tsdb-active    # 活动索引目录
+    cache_location: /loki/tsdb-cache             # 索引缓存位置
+    cache_ttl: 24h              # 缓存生存时间，提升查询性能
+    mode: opensource           # TSDB 运行模式
 
+  # 文件系统存储配置
+  filesystem:
+    directory: /loki/chunks     # 日志块存储目录
+
+  # 查询结果缓存 (提升重复查询性能)
+  boltdb_shipper:
+    cache_ttl: 24h
+
+###############################
+# 6. 数据保留与压缩 (Compactor)
+###############################
+compactor:
+  working_directory: /loki/compactor
+  compaction_interval: 10m           # 压缩间隔
+  retention_enabled: true            # 启用保留策略
+  retention_delete_delay: 2h         # 删除延迟，提供缓冲时间
+  retention_delete_worker_count: 50  # 根据磁盘I/O能力调整
+  delete_request_store: filesystem
+
+
+###############################
+# 7. 资源限制配置 (保护系统稳定性)
+###############################
 limits_config:
-  retention_period: 2160h # 保留90天（3个月）
-  max_query_lookback: 2160h  # 允许查询90天内数据（解决Grafana报错）
-  max_streams_per_user: 50000  # 限制日志流数量（防标签爆炸）
-  ingestion_rate_mb: 50       # 写入吞吐量限制（单节点建议≤50MB/s）
-  ingestion_burst_size_mb: 100  # 突发写入容忍度
-  split_queries_by_interval: 24h  # 按天拆分查询（加速大范围查询）
-  query_timeout: 10m
-
-table_manager:
-  retention_deletes_enabled: true
+  # 全局保留策略 (90天)
   retention_period: 2160h
 
-# ===== 查询性能优化 =====
+  # 摄入限制 (防止过载)
+  ingestion_rate_mb: 50               # mb单位，每个用户每秒的采样率限制
+  ingestion_burst_size_mb: 100         # 每个用户允许的采样突发大小
+  reject_old_samples: true               # 是否拒绝旧样本
+  reject_old_samples_max_age: 72h        # 72小时之前的样本被拒绝
+  max_entries_limit_per_query: 10000      # 数值改为自己想要的最大查询行数
+
+  # 查询限制
+  max_query_length: 2160h             # 最大查询时间范围
+  max_query_parallelism: 128         # 查询并行度
+  query_timeout: 10m                  # 查询超时时间
+
+  # 每个租户限制
+  per_tenant_override_period: 1m
+
+  split_queries_by_interval: 24h  # 按天拆分查询（加速大范围查询）
+
+#table_manager:
+#  retention_deletes_enabled: true        # 保留删除开启
+#  retention_period: 2160h                  # 超过2184h的块数据将被删除
+
+###############################
+# 8. 查询前端 (Query Frontend - 提升查询性能)
+###############################
+frontend:
+  max_outstanding_per_tenant: 2048
+  compress_responses: true
+
 querier:
   max_concurrent: 10       # 并行查询数（按CPU核数调整）
   query_ingesters_within: 3h  # 查询3小时内日志时访问Ingester内存数据
@@ -54,12 +122,32 @@ query_range:
       embedded_cache:       # 本地结果缓存
         enabled: true
         max_size_mb: 512    # 缓存大小（建议内存的10-20%）
+        ttl: 1h
 
-# ===== 写入与内存管理 =====
+###############################
+# 9. 输入器配置 (Ingester - 日志接收与缓存)
+###############################
 ingester:
+  # 写入前日志存储 (WAL) - 防止数据丢失
+  wal:
+    enabled: true
+    dir: /loki/wal
+    replay_memory_ceiling: 4GB  # WAL回放内存上限
+
+  # 日志块管理
+  chunk_idle_period: 30m        # 块空闲时间后刷出
+  max_chunk_age: 1h            # 块最大内存停留时间
+  chunk_target_size: 1572864   # 目标块大小 ~1.5MB
+  chunk_retain_period: 30s     # 块保留时间
+
+  # 生命周期管理
   lifecycler:
     ring:
-      replication_factor: 1  # 单节点复制因子为1
-  chunk_idle_period: 30m     # 空闲块刷新间隔（降低内存占用）
-  chunk_target_size: 10485760     # 块目标大小（平衡IO与内存）
-  max_chunk_age: 1h          # 内存中最大块存活时间
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+    final_sleep: 0s
+    min_ready_duration: 15s
+
+ruler:
+  alertmanager_url: http://localhost:9093

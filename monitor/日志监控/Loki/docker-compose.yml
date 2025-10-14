@@ -15,8 +15,13 @@ services:
         limits:
           memory: 8G
 
+# docker-compose --compatibility up -d
 # mkdir -p data
 # chmod 777 data
 
 # 删除指定标签、时间范围的日志
 # curl -X POST "http://10.194.68.225:3100/loki/api/v1/delete?query={zone=\"guangdong\",app=\"virtual-station-new\"}&start=1735660800000000000&end=1747324800000000000" -H "Content-Type: application/json"
+# http://10.194.65.135:3100/loki/api/v1/delete?query={zone="guangdong",app="virtual-station-new"}&start=2025-01-01T00:00:00Z&end=2025-10-14T07:55:00Z
+
+# 查询删除请求状态
+# curl -X GET http://10.194.68.225:3100/loki/api/v1/delete
