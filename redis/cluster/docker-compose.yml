@@ -1,4 +1,4 @@
-
+version: '3.8'
 services:
   # 实例定义（每台服务器运行3个实例）
   redis-7001:
@@ -27,7 +27,6 @@ services:
       --save 3600 1
       --maxmemory 4GB
       --maxmemory-policy volatile-lru
-      --min-replicas-to-write 1
       --tcp-backlog 10240
       --cluster-replica-validity-factor 10
       --protected-mode no
@@ -64,7 +63,6 @@ services:
       --save 3600 1
       --maxmemory 4GB
       --maxmemory-policy volatile-lru
-      --min-replicas-to-write 1
       --tcp-backlog 10240
       --cluster-replica-validity-factor 10
       --protected-mode no
@@ -101,7 +99,6 @@ services:
       --save 3600 1
       --maxmemory 4GB
       --maxmemory-policy volatile-lru
-      --min-replicas-to-write 1
       --tcp-backlog 10240
       --cluster-replica-validity-factor 10
       --protected-mode no

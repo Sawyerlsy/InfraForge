@@ -1,19 +1,37 @@
-version: '3'
-
+# docker-compose --compatibility up -d
+version: '3.8'
 services:
   redis:
-    image: redis:5.0.6
-    container_name: redis
-    hostname: redis
+    image: redis:8.2.2-alpine
+    container_name: redis-single
     restart: always
+    network_mode: host
     volumes:
-      #- ./deploy/redis/conf/redis.conf:/usr/local/etc/redis/redis.conf:rw
-      - ./deploy/redis/data:/data:rw
-    command:
-      sh -c "echo 'bind 0.0.0.0 \nprotected-mode no \nport 6379 \ndir /data \nrequirepass hgrica1@ \nappendonly yes' > 
-      /etc/redis.conf  && redis-server /etc/redis.conf"
-    ports:
-      - "6379:6379"
+      - ./data:/data
+    command: >
+      redis-server
+      --port 6379
+      --requirepass hgrica1@
+      --appendonly yes
+      --aof-use-rdb-preamble yes
+      --appendfsync everysec
+      --auto-aof-rewrite-percentage 100
+      --auto-aof-rewrite-min-size 64mb
+      --save 3600 1
+      --maxmemory 4GB
+      --maxmemory-policy volatile-lru
+      --tcp-backlog 10240
+      --protected-mode no
+      --daemonize no
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: '4GB'
+        reservations:
+          cpus: '0.5'
+          memory: '2GB'
+
 #    networks:
 #      - app_net
 #networks:

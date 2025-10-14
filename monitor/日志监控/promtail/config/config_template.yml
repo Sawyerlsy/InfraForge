@@ -61,8 +61,15 @@ scrape_configs:
           env: prod               # 环境标签（如测试/生产）
           zone: hebei
           host: "server-223"      # 低基数主机标识（替代高基数 IP）
-          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/full/**/*.log  # 递归匹配所有子目录的 .log 文件
-          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/full/**/*.gz   # 排除压缩文件（避免重复采集）
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/full/log_info.log  # 递归匹配所有子目录的 .log 文件
+
+      - targets: [ localhost ]  # 目标主机列表（本地采集时固定为 localhost）
+        labels:
+          job: emtc-server         # 服务标识（必填）
+          env: prod               # 环境标签（如测试/生产）
+          zone: hebei
+          host: "server-223"      # 低基数主机标识（替代高基数 IP）
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/full/log_error.log  # 递归匹配所有子目录的 .log 文件
 
   - job_name: virtual-station-trade-logs
     pipeline_stages:

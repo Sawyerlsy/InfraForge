@@ -17,3 +17,6 @@ services:
 
 # mkdir -p data
 # chmod 777 data
+
+# 删除指定标签、时间范围的日志
+# curl -X POST "http://10.194.68.225:3100/loki/api/v1/delete?query={zone=\"guangdong\",app=\"virtual-station-new\"}&start=1735660800000000000&end=1747324800000000000" -H "Content-Type: application/json"
