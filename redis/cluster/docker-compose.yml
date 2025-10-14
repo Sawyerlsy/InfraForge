@@ -2,7 +2,7 @@ version: '3.8'
 services:
   # 实例定义（每台服务器运行3个实例）
   redis-7001:
-    image: redis:6.2.19-alpine
+    image: redis:8.2.2-alpine
     container_name: redis-7001
     restart: always
     network_mode: host
@@ -38,7 +38,7 @@ services:
           memory: '4GB'
 
   redis-7002:
-    image: redis:6.2.19-alpine
+    image: redis:8.2.2-alpine
     container_name: redis-7002
     restart: always
     network_mode: host
@@ -74,7 +74,7 @@ services:
           memory: '4GB'
 
   redis-7003:
-    image: redis:6.2.19-alpine
+    image: redis:8.2.2-alpine
     container_name: redis-7003
     restart: always
     network_mode: host
