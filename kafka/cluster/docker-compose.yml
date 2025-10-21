@@ -1,0 +1,66 @@
+# docker-compose --compatibility up -d
+# KRaft模式部署,不依赖zookeeper
+
+version: '3.8'
+
+services:
+  kafka:
+    image: bitnami/kafka:4.0.0
+    security_opt:
+      - seccomp:unconfined  # 解除线程创建限制
+    cap_add:
+      - SYS_RESOURCE       # 授予资源控制权限.为容器添加Linux的CAP_SYS_RESOURCE能力（Capability），允许其<200b><200b>突破内核资源限制
+    container_name: kafka-1
+    restart: always
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      - TZ=Asia/Shanghai
+      - KAFKA_CFG_NODE_ID=1 # 节点唯一标识，集群中每个节点必须不同
+      - KAFKA_CLUSTER_ID=unique-kafka-cluster # 集群唯一标识
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker # 节点角色：controller(元数据管理) + broker(消息存储)
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT # 为每个监听器名称映射安全协议。此配置表明 CONTROLLER和 PLAINTEXT两个监听器都使用不加密的明文协议（PLAINTEXT）
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER # 指定名为 CONTROLLER的监听器（即端口 9093）进行 KRaft 元数据同步等内部操作
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@10.194.65.133:9093,2@10.194.65.134:9093,3@10.194.65.135:9093 # 定义Controller 仲裁组的成员列表,集群部署时列出所有
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://10.194.65.133:9092 # 广告监听器：客户端连接时使用的地址
+
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=3  # 内部主题__consumer_offsets 分区的副本数,每个分区有3个副本，可以容忍2个节点故障,小于等于节点数量
+      - KAFKA_CFG_OFFSETS_TOPIC_NUM_PARTITIONS=50  # 内部主题__consumer_offsets 主题的分区数,控制并行处理能力,控制并行处理能力
+
+      - KAFKA_CFG_NUM_PARTITIONS=3 # 用户创建主题的默认分区数
+      - KAFKA_CFG_DEFAULT_REPLICATION_FACTOR=3 # 用户创建主题的默认副本数
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true # 允许自动创建主题
+
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=3  # 事务状态日志复制因子
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2  # 事务状态日志最小ISR
+
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./data:/bitnami/kafka
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: '2GB'
+
+
+# mkdir -p data && chmod 777 data
+# 检查Controller选举状态: docker exec kafka-1 kafka-metadata-quorum.sh --bootstrap-server 10.194.65.133:9092 describe --status
+# 检查Quorum复制状态: docker exec kafka-1 kafka-metadata-quorum.sh  --bootstrap-server 10.194.65.133:9092 describe --replication
+# 检查Broker注册状态: docker exec kafka-1 kafka-broker-api-versions.sh --bootstrap-server 10.194.65.133:9092
+#
+
+# 1. 创建测试主题
+# docker exec kafka-1 kafka-topics.sh --bootstrap-server 10.194.65.133:9092 --create --topic test-cluster-health --partitions 3 --replication-factor 3
+
+# 2. 查看主题详情（检查副本分布）
+# docker exec kafka-1 kafka-topics.sh --bootstrap-server 10.194.65.133:9092 --describe --topic test-cluster-health
+
+# 3. 生产测试消息
+# echo "集群健康测试消息 $(date)" | docker exec -i kafka-1 kafka-console-producer.sh --bootstrap-server 10.194.65.133:9092,10.194.65.134:9092,10.194.65.135:9092 --topic test-cluster-health
+
+# 4. 消费测试消息
+# docker exec kafka-1 kafka-console-consumer.sh --bootstrap-server 10.194.65.133:9092,10.194.65.134:9092,10.194.65.135:9092 --topic test-cluster-health --from-beginning --timeout-ms 10000 --max-messages 1

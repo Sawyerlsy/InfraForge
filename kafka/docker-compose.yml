@@ -1,0 +1,46 @@
+# docker-compose --compatibility up -d
+# KRaft模式部署,不依赖zookeeper
+
+version: '3.8'
+
+services:
+  kafka:
+    image: bitnami/kafka:4.0.0
+    security_opt:
+      - seccomp:unconfined  # 解除线程创建限制
+    cap_add:
+      - SYS_RESOURCE       # 授予资源控制权限.为容器添加Linux的CAP_SYS_RESOURCE能力（Capability），允许其<200b><200b>突破内核资源限制
+    container_name: kafka
+    restart: always
+    ports:
+      - "9092:9092"
+    environment:
+      - TZ=Asia/Shanghai
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CLUSTER_ID=unique-kafka-cluster
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092 # 单节点模式下需使用容器名kafka
+
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1  # 内部主题__consumer_offsets 分区的副本数,每个分区有3个副本，可以容忍2个节点故障,小于等于节点数量
+      - KAFKA_CFG_OFFSETS_TOPIC_NUM_PARTITIONS=10  # 内部主题__consumer_offsets 主题的分区数,控制并行处理能力,控制并行处理能力
+
+      - KAFKA_CFG_NUM_PARTITIONS=1 # 用户创建主题的默认分区数
+      - KAFKA_CFG_DEFAULT_REPLICATION_FACTOR=1 # 用户创建主题的默认副本数
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true # 允许自动创建主题
+
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1  # 事务状态日志复制因子
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=1  # 事务状态日志最小ISR
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./data:/bitnami/kafka
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: '2GB'
+
