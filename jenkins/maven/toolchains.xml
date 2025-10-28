@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<toolchains>
+    <!-- JDK 1.8配置 -->
+    <toolchain>
+        <type>jdk</type>
+        <provides>
+            <version>1.8</version>
+            <vendor>oracle</vendor>
+        </provides>
+        <configuration>
+            <!-- Windows路径示例 -->
+            <!-- <jdkHome>C:\Program Files\Java\jdk1.8.0_301</jdkHome> -->
+            <!-- Linux路径示例 -->
+            <jdkHome>/opt/sources/jdk1.8.0_144</jdkHome>
+        </configuration>
+    </toolchain>
+
+    <!-- JDK 11配置 -->
+    <toolchain>
+        <type>jdk</type>
+        <provides>
+            <version>11</version>
+            <vendor>oracle</vendor>
+        </provides>
+        <configuration>
+            <!-- Windows路径示例 -->
+            <!-- <jdkHome>C:\Program Files\Java\jdk-11.0.20</jdkHome> -->
+            <!-- Linux路径示例 -->
+            <jdkHome>/opt/sources/jdk11.0.20</jdkHome>
+        </configuration>
+    </toolchain>
+</toolchains>

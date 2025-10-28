@@ -4,9 +4,9 @@ https://download.docker.com/linux/static/stable
 ### Docker Compose资源地址
 https://github.com/docker/compose/releases
 
-## 常用配置
+### 常用配置
 
-### 1、Docker日志轮转
+#### 1、Docker日志轮转
 ```shell
 # 添加json配置
 vim /etc/docker/daemon.json
@@ -30,3 +30,13 @@ docker info --format '{{.LoggingDriver}}'
 docker inspect <container_id> | grep LogConfig -A 10
 ```
 > - 注意：日志轮转配置后仅对之后新增的容器生效,旧容器的日志不会被轮转
+
+### 常用功能
+#### 1、清理镜像和容器
+```shell
+# 删除镜像
+docker rmi $(docker images | grep "none" | awk '{print $3}') 
+
+# 删除容器
+docker rm $(docker ps -aq --filter "status=exited") 
+```

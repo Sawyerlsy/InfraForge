@@ -11,7 +11,7 @@ services:
     restart: always
     environment: # springboot会将环境变量名中的 _ 替换为 .，并转换为小写（例如 SPRING_DATASOURCE_URL → spring.datasource.url）,优先级高于application.properties
      - TZ=Asia/Shanghai
-     - SPRING_DATASOURCE_URL=jdbc:mysql://10.194.65.131:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
+     - SPRING_DATASOURCE_URL=jdbc:mysql://10.194.65.131:3307/vstation_xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
      - SPRING_DATASOURCE_USERNAME=root
      - SPRING_DATASOURCE_PASSWORD=hgrica1@
      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver

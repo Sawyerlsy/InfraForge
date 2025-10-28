@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  portainer:
+    image: portainer/portainer-ce:2.33.2
+    container_name: portainer
+    restart: always
+    ports:
+      - "9000:9000"
+    command: -H tcp://agent:9001 --tlsskipverify
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/data
+      - /etc/localtime:/etc/localtime:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: '1GB'
+
+networks:
+  default:
+    name: portainer_network
+
+
+# # Portainer可以使用本地socket、tcp连接、Portainer agent、Edge agent四种方式连接docker，推荐使用Portainer agent.安全、复杂度中等
+# docker-compose --compatibility up -d

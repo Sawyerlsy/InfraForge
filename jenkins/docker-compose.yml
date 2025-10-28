@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  jenkins:
+    image: jenkins/jenkins:latest-jdk21
+    security_opt:
+      - seccomp:unconfined  # 解除线程创建限制
+    cap_add:
+      - SYS_RESOURCE       # 授予资源控制权限.为容器添加Linux的CAP_SYS_RESOURCE能力（Capability），允许其<200b><200b>突破内核资源限制
+    container_name: jenkins
+    user: root # 默认以jenkins用户运行,许多操作会有限制，没有权限
+    restart: always
+    environment:
+      - JAVA_OPTS=-Duser.timezone=Asia/Shanghai
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
+      - /usr/local/bin/docker-compose:/usr/local/bin/docker-compose
+      - /opt/sources/jdk1.8.0_144:/opt/sources/jdk1.8.0_144
+      - /opt/sources/jdk-21.0.9+10:/opt/sources/jdk-21.0.9+10
+      - /opt/sources/apache-maven-3.9.11:/opt/sources/apache-maven-3.9.11
+      - ./jenkins_home/:/var/jenkins_home
+      - /opt/.m2/repository:/opt/.m2/repository
+      - ./maven/toolchains.xml:/opt/sources/apache-maven-3.9.11/conf/toolchains.xml
+    extra_hosts:
+      - "core.harbor.domain:10.194.68.171"
+      - "svn.hgits.cn:10.194.69.251"
+      - "nexus.hgits.cn:10.194.69.18"
+      - "maven.aliyun.com:61.241.13.250"
+      - "updates.jenkins.io :128.24.70.119"
+      - "mirror.ossplanet.net:163.22.17.70"
+      - "mirror.twds.com.tw:103.147.22.36"
+      - "mirrors.tuna.tsinghua.edu.cn:101.6.15.130"
+
+networks:
+  default:
+    name: jenkins_net
+
+
+# docker-compose --compatibility up -d

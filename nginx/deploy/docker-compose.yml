@@ -17,3 +17,4 @@ services:
     environment:
       - TZ=Asia/Shanghai                        # 设置时区
 
+# 检查配置是否正确: docker exec -it nginx nginx -t
