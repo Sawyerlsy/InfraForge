@@ -18,6 +18,17 @@ cat >> /etc/security/limits.conf << EOF
 * soft nproc 120000
 * hard nproc 120000
 EOF
+
+# 查看是否生效
+# open files：对应配置中的 nofile，应显示为 65535。
+# max user processes：对应配置中的 nproc，应显示为 120000
+ulimit -a
+
+# 如果没有生效,或者root生效而其他的用户不生效,则检测limits.d目录是否存在20-nproc.conf, 90-nproc.conf等文件
+ls /etc/security/limits.d/
+
+# 如果有对应的文件,则增加权限配置即可，如:
+root       soft    nproc     unlimited
 ```
 #### 3、内存敏感型的应用建议关闭swap
 ```shell
