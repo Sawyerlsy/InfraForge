@@ -13,8 +13,8 @@ server:
   grpc_server_max_send_msg_size: 104857600   # 限制此服务器可以发送的 gRPC 消息的大小（字节）。
   grpc_server_max_concurrent_streams: 0     # 限制 gRPC 调用的并发流数（0 = 无限制）
   graceful_shutdown_timeout: 300s   # 正常关机的超时| default = 30s
-  http_server_read_timeout: 90s    # HTTP服务器的读取超时| default = 30s
-  http_server_write_timeout: 90s   # HTTP服务器的读取超时| default = 30s
+  http_server_read_timeout: 120s    # HTTP服务器的读取超时| default = 30s
+  http_server_write_timeout: 120s   # HTTP服务器的读取超时| default = 30s
   http_server_idle_timeout: 300s
 
 ###############################
@@ -54,7 +54,7 @@ storage_config:
   tsdb_shipper:
     active_index_directory: /loki/tsdb-active    # 活动索引目录
     cache_location: /loki/tsdb-cache             # 索引缓存位置
-    cache_ttl: 24h              # 缓存生存时间，提升查询性能
+    cache_ttl: 48h              # 缓存生存时间，提升查询性能
     mode: opensource           # TSDB 运行模式
 
   # 文件系统存储配置
@@ -70,10 +70,10 @@ storage_config:
 ###############################
 compactor:
   working_directory: /loki/compactor
-  compaction_interval: 10m           # 压缩间隔
+  compaction_interval: 30m           # 压缩间隔
   retention_enabled: true            # 启用保留策略
-  retention_delete_delay: 2h         # 删除延迟，提供缓冲时间
-  retention_delete_worker_count: 50  # 根据磁盘I/O能力调整
+  retention_delete_delay: 4h         # 删除延迟，提供缓冲时间
+  retention_delete_worker_count: 5  # 根据磁盘I/O能力调整
   delete_request_store: filesystem
 
 
@@ -81,48 +81,49 @@ compactor:
 # 7. 资源限制配置 (保护系统稳定性)
 ###############################
 limits_config:
-  # 全局保留策略 (90天)
-  retention_period: 2160h
+  # 全局保留策略 (60天)
+  retention_period: 1440h
 
   # 摄入限制 (防止过载)
-  ingestion_rate_mb: 50               # mb单位，每个用户每秒的采样率限制
-  ingestion_burst_size_mb: 100         # 每个用户允许的采样突发大小
+  ingestion_rate_mb: 100               # mb单位，每个用户每秒的采样率限制
+  ingestion_burst_size_mb: 200         # 每个用户允许的采样突发大小
   reject_old_samples: true               # 是否拒绝旧样本
   reject_old_samples_max_age: 72h        # 72小时之前的样本被拒绝
   max_entries_limit_per_query: 10000      # 数值改为自己想要的最大查询行数
 
   # 查询限制
-  max_query_length: 2160h             # 最大查询时间范围
-  max_query_parallelism: 128         # 查询并行度
+  max_query_length: 1440h             # 最大查询时间范围
+  max_query_parallelism: 32         # 查询并行度
   query_timeout: 10m                  # 查询超时时间
 
   # 每个租户限制
   per_tenant_override_period: 1m
 
-  split_queries_by_interval: 24h  # 按天拆分查询（加速大范围查询）
+  split_queries_by_interval: 6h  # 按天拆分查询（加速大范围查询）
 
 #table_manager:
 #  retention_deletes_enabled: true        # 保留删除开启
-#  retention_period: 2160h                  # 超过2184h的块数据将被删除
+#  retention_period: 1440h                  # 超过2184h的块数据将被删除
 
 ###############################
 # 8. 查询前端 (Query Frontend - 提升查询性能)
 ###############################
 frontend:
-  max_outstanding_per_tenant: 2048
+  max_outstanding_per_tenant: 1024
   compress_responses: true
 
 querier:
-  max_concurrent: 10       # 并行查询数（按CPU核数调整）
+  max_concurrent: 8       # 并行查询数（按CPU核数调整）
   query_ingesters_within: 3h  # 查询3小时内日志时访问Ingester内存数据
 
 query_range:
+  parallelise_shardable_queries: true     # 启用查询并行化
   results_cache:
     cache:
       embedded_cache:       # 本地结果缓存
         enabled: true
-        max_size_mb: 512    # 缓存大小（建议内存的10-20%）
-        ttl: 1h
+        max_size_mb: 2048    # 缓存大小（建议内存的10-20%）
+        ttl: 2h
 
 ###############################
 # 9. 输入器配置 (Ingester - 日志接收与缓存)
@@ -135,9 +136,9 @@ ingester:
     replay_memory_ceiling: 4GB  # WAL回放内存上限
 
   # 日志块管理
-  chunk_idle_period: 30m        # 块空闲时间后刷出
-  max_chunk_age: 1h            # 块最大内存停留时间
-  chunk_target_size: 1572864   # 目标块大小 ~1.5MB
+  chunk_idle_period: 10m        # 块空闲时间后刷出
+  max_chunk_age: 2h            # 块最大内存停留时间
+  chunk_target_size: 2097152   # 目标块大小 ~1.5MB
   chunk_retain_period: 30s     # 块保留时间
 
   # 生命周期管理
