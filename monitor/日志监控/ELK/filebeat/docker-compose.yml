@@ -1,0 +1,28 @@
+version: "3.8"
+services:
+  filebeat:
+    image: elastic/filebeat:9.2.1
+    security_opt:
+      - seccomp:unconfined  # 解除线程创建限制
+    cap_add:
+      - SYS_RESOURCE       # 授予资源控制权限.为容器添加Linux的CAP_SYS_RESOURCE能力（Capability），允许其<200b><200b>突破内核资源限制
+    user: root # 不设置root用户,会无法读取日志
+    container_name: filebeat
+    network_mode: host
+    restart: always
+    volumes:
+      - ./conf/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - /var/lib/docker/volumes/virtual-station-logs:/var/lib/docker/volumes/virtual-station-logs
+      - /var/lib/docker/containers:/var/lib/docker/containers
+      - ./data:/usr/share/filebeat/data # 持久化 Filebeat 的注册表位置，避免重复发送日志
+    command: filebeat -e --strict.perms=false # -e 输出日志到标准错误，便于调试
+    environment:
+      - "ES_JAVA_OPTS=-Xms64m -Xmx512m" # 设置 JVM 堆大小
+
+    #    command: ["/usr/share/filebeat/filebeat", "-e", "-d", "*"]  # 显式指定文件路径和命令
+
+
+# mkdir -p data && chmod -R 777 data
+
+# 验证配置是否正确: docker exec -it filebeat filebeat test config -c /usr/share/filebeat/filebeat.yml
+# 如果提示文件不是root,则需要设置 chown root.root ./conf/filebeat.yml

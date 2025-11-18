@@ -268,3 +268,6 @@ scrape_configs:
 # 查找包含 SocketTimeout 的日志：{job="fee-server"} |~ "SocketTimeout"
 # 提取json字段,查找包含error_code的： {job="fee-server"} | json | error_code  != ""
 # 查找 status=404 且 method=GET 的日志：  {job="fee-server"} | json | status = "404" and method = "GET"
+
+# 注意:
+# 1. Promtail使用的是glob表达式，不是正则表达式

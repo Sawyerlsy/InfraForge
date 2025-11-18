@@ -66,3 +66,31 @@ docker rmi $(docker images | grep "none" | awk '{print $3}')
 # 删除容器
 docker rm $(docker ps -aq --filter "status=exited") 
 ```
+
+#### 2、创建swarm集群
+<h6>在Docker Swarm集群中，管理节点（Manager Nodes） 负责集群的管理和编排，工作节点（Worker Nodes） 则负责运行容器任务。管理节点数量为奇数，最少为3个。
+如果只有三台服务器,那么三台服务器都建议作为manager节点,同时运行容器任务</h6>
+```shell
+# 创建集群,并指定manager节点的IP地址
+docker swarm init --advertise-addr 10.194.66.176 --dispatcher-heartbeat 180s
+
+# 在管理节点上获取worker或者manager的加入命令
+docker swarm join-token manager
+docker swarm join-token worker
+
+# 查看节点
+docker node ls
+
+# 退出集群
+docker swarm leave --force
+
+# 添加标签
+docker node update --label-add app=virtual-station-rebuild --label-add zone=hebei --label-add service=upload production2
+
+# 查看节点信息
+docker node inspect <node_id>
+docker node inspect --pretty <node_id>
+
+# 创建集群overlay网络
+docker network create --driver overlay --attachable --subnet=192.168.0.0/24 --gateway=192.168.0.254  app_net
+```

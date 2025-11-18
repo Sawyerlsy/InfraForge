@@ -19,6 +19,7 @@ services:
       - -config.file=/etc/promtail/config.yml
 #      - -log.level=debug # 调试模式仅在有必要的时候打开
 
+# mkdir -p positions && chmod -R 777 positions
 # 检查配置是否正确：docker-compose exec promtail promtail -config.file=/etc/promtail/config.yml -check-syntax
 # 检查采集状态: http://10.194.68.223:9080/targets
 # docker-compose up -d

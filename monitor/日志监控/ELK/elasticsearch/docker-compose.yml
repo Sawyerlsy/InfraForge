@@ -1,0 +1,50 @@
+version: "3.8"
+services:
+  elasticsearch:
+    image: elasticsearch:9.2.1
+    security_opt:
+      - seccomp:unconfined  # 解除线程创建限制
+    cap_add:
+      - SYS_RESOURCE       # 授予资源控制权限.为容器添加Linux的CAP_SYS_RESOURCE能力（Capability），允许其<200b><200b>突破内核资源限制
+    container_name: elasticsearch
+    restart: always
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - TZ=Asia/Shanghai
+      - ELASTIC_PASSWORD=elastic # 超级管理员密码
+      - bootstrap.memory_lock=true #锁住内存 提高性能
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g #设置启动内存大小 默认内存/最大内存
+      - discovery.type=single-node #单节点设置
+      - cluster.name=es-cluster
+      - node.name=es-node-1
+      - network.host=0.0.0.0
+      - xpack.security.enabled=true
+      - xpack.monitoring.collection.enabled=true
+      - xpack.security.http.ssl.enabled=false # 禁用Https
+      - xpack.security.transport.ssl.enabled=false
+      - http.cors.enabled=true #允许跨域，集群需要设置
+      - http.cors.allow-origin="*" #跨域设置
+#      - http.cors.allow-headers=Authorization,X-Requested-With,Content-Type,Content-Length
+    volumes: #挂载文件
+      - ./data:/usr/share/elasticsearch/data
+      - ./logs:/usr/share/elasticsearch/logs
+      - ./plugins:/usr/share/elasticsearch/plugins
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    logging: # logstash 一旦开启调试日志,终端日志会不断的堆积在容器里面,可能导致磁盘刷爆
+      driver: 'json-file'
+      options:
+        max-size: '100m'  # 每个日志文件最大100MB
+        max-file: '3'     # 最多保留3个日志文件
+
+networks:
+  default:
+    name: elastic_net
+
+# data、logs、plugins目录设置777权限：
+# mkdir -p data logs plugins && chmod -R 777 data logs plugins
+# http://ip:9200

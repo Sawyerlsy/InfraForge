@@ -1,0 +1,34 @@
+version: "3.8"
+services:
+  kibana:
+    image: kibana:9.2.1
+    security_opt:
+      - seccomp:unconfined  # 解除线程创建限制
+    cap_add:
+      - SYS_RESOURCE       # 授予资源控制权限.为容器添加Linux的CAP_SYS_RESOURCE能力（Capability），允许其<200b><200b>突破内核资源限制
+    container_name: kibana
+    environment:
+      - TZ=Asia/Shanghai
+      - SERVER_NAME=kibana
+      - I18N_LOCALE=zh-CN    # 设置中文界面
+      - SERVER_HOST=0.0.0.0  # 允许外部访问
+      - ELASTICSEARCH_HOSTS=http://10.194.65.135:9200
+      - ELASTICSEARCH_USERNAME=kibana_system  # 从 8.x 开始，Kibana 不允许用 elastic 超级用户账号直接连接 ES
+      - ELASTICSEARCH_PASSWORD=kibana_system  # 需要在elasticsearch中设置密码
+#      - xpack.fleet.encryptionKey=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+      - XPACK_REPORTING_ENCRYPTIONKEY=b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7
+    restart: always
+    ports:
+      - "5601:5601"
+    volumes:
+      - ./data:/usr/share/kibana/data
+
+networks:
+  default:
+    name: kibana_net
+
+
+# mkdir -p data && chmod -R 777 data
+# http://ip:5601
+# 用户名/密码: elastic/elastic
