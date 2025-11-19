@@ -12,9 +12,14 @@ services:
     restart: always
     ports:
       - "9600:9600"
-      - "5044:5044"
+      - "5044:5044" # 广东
+      - "5045:5045" # 河北
+      - "5046:5046" # 江西
+      - "5047:5047" # 云南
     volumes:
-      - ./pipeline:/usr/share/logstash/pipeline
+      - ./pipeline:/usr/share/logstash/pipeline  # 挂载管道配置文件目录
+      - ./config/pipelines.yml:/usr/share/logstash/config/pipelines.yml      # 镜像本身config目录下有许多配置配置,这里不允许挂载整个目录,否则会覆盖掉镜像的其他配置
+      - ./config/jvm.options:/usr/share/logstash/config/jvm.options      # 镜像本身config目录下有许多配置配置,这里不允许挂载整个目录,否则会覆盖掉镜像的其他配置
       - ./data:/usr/share/logstash/data
 
     logging: # logstash 一旦开启调试日志,终端日志会不断的堆积在容器里面,可能导致磁盘刷爆

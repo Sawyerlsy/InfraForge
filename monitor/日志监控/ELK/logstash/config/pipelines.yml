@@ -1,0 +1,27 @@
+- pipeline.id: guangdong-pipeline
+  path.config: "/usr/share/logstash/pipeline/pipeline_guangdong.conf"
+  #pipeline.batch.size: 125 # 单个工作线程从输入收集的最大事件数，之后执行过滤器和输出。更大的批次更高效，但增加内存开销。可能需要调整 JVM 堆内存（jvm.options）,默认值125
+  #pipeline.batch.delay: 50 # 创建事件批次时，等待每个事件的毫秒数，超时后分发未满批次,默认50
+  queue.type: memory # 事件缓冲队列类型。memory 基于内存，性能好；若需更强可靠性，可设为 persisted（基于磁盘的持久化队列）.数据至关重要，不允许丢失：例如订单日志、交易记录，务必选择 persisted
+  #queue.page_capacity: 256mb # 持久化队列的数据页文件大小（按页追加存储）,默认64mb
+
+- pipeline.id: hebei-pipeline
+  path.config: "/usr/share/logstash/pipeline/pipeline_hebei.conf"
+  #pipeline.batch.size: 125 # 单个工作线程从输入收集的最大事件数，之后执行过滤器和输出。更大的批次更高效，但增加内存开销。可能需要调整 JVM 堆内存（jvm.options）,默认值125
+  #pipeline.batch.delay: 50 # 创建事件批次时，等待每个事件的毫秒数，超时后分发未满批次,默认50
+  queue.type: memory # 事件缓冲队列类型。memory 基于内存，性能好；若需更强可靠性，可设为 persisted（基于磁盘的持久化队列）.数据至关重要，不允许丢失：例如订单日志、交易记录，务必选择 persisted
+  #queue.page_capacity: 256mb # 持久化队列的数据页文件大小（按页追加存储）,默认64mb
+
+- pipeline.id: jiangxi-pipeline
+  path.config: "/usr/share/logstash/pipeline/pipeline_jiangxi.conf"
+  #pipeline.batch.size: 125 # 单个工作线程从输入收集的最大事件数，之后执行过滤器和输出。更大的批次更高效，但增加内存开销。可能需要调整 JVM 堆内存（jvm.options）,默认值125
+  #pipeline.batch.delay: 50 # 创建事件批次时，等待每个事件的毫秒数，超时后分发未满批次,默认50
+  queue.type: memory # 事件缓冲队列类型。memory 基于内存，性能好；若需更强可靠性，可设为 persisted（基于磁盘的持久化队列）.数据至关重要，不允许丢失：例如订单日志、交易记录，务必选择 persisted
+  #queue.page_capacity: 256mb # 持久化队列的数据页文件大小（按页追加存储）,默认64mb
+
+- pipeline.id: yunnan-pipeline
+  path.config: "/usr/share/logstash/pipeline/pipeline_yunnan.conf"
+  #pipeline.batch.size: 125 # 单个工作线程从输入收集的最大事件数，之后执行过滤器和输出。更大的批次更高效，但增加内存开销。可能需要调整 JVM 堆内存（jvm.options）,默认值125
+  #pipeline.batch.delay: 50 # 创建事件批次时，等待每个事件的毫秒数，超时后分发未满批次,默认50
+  queue.type: memory # 事件缓冲队列类型。memory 基于内存，性能好；若需更强可靠性，可设为 persisted（基于磁盘的持久化队列）.数据至关重要，不允许丢失：例如订单日志、交易记录，务必选择 persisted
+  #queue.page_capacity: 256mb # 持久化队列的数据页文件大小（按页追加存储）,默认64mb

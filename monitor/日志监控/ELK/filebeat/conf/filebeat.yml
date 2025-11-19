@@ -1,0 +1,199 @@
+http.enabled: true
+http.port: 5066
+
+filebeat.inputs:
+  - type: filestream
+    id: virtual-station-param-logs # 唯一标识
+    enabled: true
+    paths: # glob模式
+      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-param/**/*.log
+    prospector.scanner.exclude_files:
+      - '\.gz$'                  # 排除所有以.gz结尾的文件
+      - 'gc/.*'                  # 排除gc目录下的所有文件
+      - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
+      - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
+    parsers:
+      - multiline:
+          type: pattern
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          negate: true
+          match: after
+          max_lines: 100
+          timeout: 3s
+    fields: # 需要用于搜索的字段
+      zone: guangdong
+      app: virtual-station-old
+      service: virtual-station-param
+      env: prod
+      address: "10.194.66.175"
+    fields_under_root: true # 让这些字段成为顶级字段，便于查询
+
+  - type: filestream
+    id: virtual-station-charge-logs
+    enabled: true
+    paths:
+      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-charge/**/*.log
+    prospector.scanner.exclude_files:
+      - '\.gz$'                  # 排除所有以.gz结尾的文件
+      - 'gc/.*'                  # 排除gc目录下的所有文件
+      - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
+      - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
+    parsers:
+      - multiline:
+          type: pattern
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          negate: true
+          match: after
+          max_lines: 100
+          timeout: 3s
+    fields: # 需要用于搜索的字段
+      zone: guangdong
+      app: virtual-station-old
+      service: virtual-station-charge
+      env: prod
+      address: "10.194.66.175"
+    fields_under_root: true # 让这些字段成为顶级字段，便于查询
+
+  - type: filestream
+    id: virtual-station-list-logs
+    enabled: true
+    paths:
+      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-list/**/*.log
+    prospector.scanner.exclude_files:
+      - '\.gz$'                  # 排除所有以.gz结尾的文件
+      - 'gc/.*'                  # 排除gc目录下的所有文件
+      - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
+      - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
+    parsers:
+      - multiline:
+          type: pattern
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          negate: true
+          match: after
+          max_lines: 100
+          timeout: 3s
+    fields: # 需要用于搜索的字段
+      zone: guangdong
+      app: virtual-station-old
+      service: virtual-station-list
+      env: prod
+      address: "10.194.66.175"
+    fields_under_root: true # 让这些字段成为顶级字段，便于查询
+
+  - type: filestream
+    id: virtual-station-psam-logs
+    enabled: true
+    paths:
+      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-psam/**/*.log
+    prospector.scanner.exclude_files:
+      - '\.gz$'                  # 排除所有以.gz结尾的文件
+      - 'gc/.*'                  # 排除gc目录下的所有文件
+      - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
+      - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
+    parsers:
+      - multiline:
+          type: pattern
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          negate: true
+          match: after
+          max_lines: 100
+          timeout: 3s
+    fields: # 需要用于搜索的字段
+      zone: guangdong
+      app: virtual-station-old
+      service: virtual-station-psam
+      env: prod
+      address: "10.194.66.175"
+    fields_under_root: true # 让这些字段成为顶级字段，便于查询
+
+  - type: filestream
+    id: virtual-station-trade-logs
+    enabled: true
+    paths:
+      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-trade/**/all/logall.log
+    prospector.scanner.exclude_files:
+      - '\.gz$'                  # 排除所有以.gz结尾的文件
+      - 'gc/.*'                  # 排除gc目录下的所有文件
+      - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
+      - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
+    parsers:
+      - multiline:
+          type: pattern
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          negate: true
+          match: after
+          max_lines: 100
+          timeout: 3s
+    fields: # 需要用于搜索的字段
+      zone: guangdong
+      app: virtual-station-old
+      service: virtual-station-trade
+      env: prod
+      address: "10.194.66.175"
+    fields_under_root: true # 让这些字段成为顶级字段，便于查询
+
+  - type: filestream
+    id: virtual-station-upload-logs
+    enabled: true
+    paths:
+      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-upload/**/*.log
+    prospector.scanner.exclude_files:
+      - '\.gz$'                  # 排除所有以.gz结尾的文件
+      - 'gc/.*'                  # 排除gc目录下的所有文件
+      - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
+      - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
+    parsers:
+      - multiline:
+          type: pattern
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          negate: true
+          match: after
+          max_lines: 100
+          timeout: 3s
+    fields: # 需要用于搜索的字段
+      zone: guangdong
+      app: virtual-station-old
+      service: virtual-station-upload
+      env: prod
+      address: "10.194.66.175"
+    fields_under_root: true # 让这些字段成为顶级字段，便于查询
+
+  - type: filestream
+    id: virtual-station-gateway-logs
+    enabled: true
+    paths:
+      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-gateway/**/*.log
+    prospector.scanner.exclude_files:
+      - '\.gz$'                  # 排除所有以.gz结尾的文件
+      - 'gc/.*'                  # 排除gc目录下的所有文件
+      - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
+      - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
+    parsers:
+      - multiline:
+          type: pattern
+          pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          negate: true
+          match: after
+          max_lines: 100
+          timeout: 3s
+    fields: # 需要用于搜索的字段
+      zone: guangdong
+      app: virtual-station-old
+      service: virtual-station-gateway
+      env: prod
+      address: "10.194.66.175"
+    fields_under_root: true # 让这些字段成为顶级字段，便于查询
+
+
+output.logstash:
+  hosts: ["10.194.65.135:5044"]  # Logstash 服务器地址
+  loadbalance: false
+
+
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /usr/share/filebeat/logs
+  name: filebeat.log
+  keepfiles: 7
+  permissions: 0644
