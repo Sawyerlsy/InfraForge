@@ -27,48 +27,114 @@ curl -u elastic:elastic "http://localhost:9200/_security/user?pretty"
 
 ```
 
-
 #### 1.3 elasticsearch状态检查
 ```shell
+
+
 # 1. 检查集群整体健康状态
 # status字段:
 # green（绿色）：一切正常。
 # yellow（黄色）：所有主分片可用，但副本分片未全部分配。这通常发生在单节点集群或副本丢失时。
 # red（红色）：至少有一个主分片不可用。这是最严重的情况，会导致部分数据完全无法访问
-
-curl -XGET 'http://10.194.65.135:9200/_cluster/health?pretty'
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_cluster/health?pretty'
 
 # 2. 查看所有节点的状态
-curl -XGET 'http://10.194.65.135:9200/_cat/nodes?v'
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_cat/nodes?v'
 
-# 3. 查看所有索引的状态，特别关注 .security-* 和 .kibana_* 等系统索引
-curl -XGET 'http://10.194.65.135:9200/_cat/indices?v' | grep -E "(red|yellow|security|kibana)"
+# 3. 查看索引状态,确保所有索引的状态（status）都是 open，没有 red或 yellow
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_cat/indices?v'
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_cat/indices?v' | grep -E "(red|yellow|security|kibana)"
 
 
-# 此命令会返回详细的解释，说明为什么有分片无法分配
+# 查看所有分片状态,检查输出中是否有 UNASSIGNED状态的分片。如果没有，说明所有分片都已分配
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_cat/shards?v'
+
+# 找出是哪个索引的哪个分片没有分配
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_cat/shards?v&h=index,shard,prirep,state,unassigned.reason' | grep UNASSIGNED
+
+# 诊断未分配的根本原因
 # 重点关注:unassigned_info.reason
 # 常见的原因如下：
 # CLUSTER_RECOVERED"：集群恢复期间无法分配。
 # NODE_LEFT：持有该分片的节点离开了集群。
 # DISK_AVAILABLE_SPACE_LOW：节点磁盘空间不足（这是一个非常常见的原因）
-curl -XGET 'http://10.194.65.135:9200/_cluster/allocation/explain?pretty' | python -m json.tool
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_cluster/allocation/explain?pretty' | python -m json.tool
+
+curl -u elastic:elastic -XGET "http://10.194.65.135:9200/_cluster/allocation/explain?pretty" -H 'Content-Type: application/json' -d'
+{
+"index": "您的_data_stream名",  # 替换为上一步找到的索引名
+"shard": 0,                    # 替换为具体的分片号
+"primary": false # 因为是副本分片，所以是 false
+}
+'
+
+
+# 查看指定模板的配置，如：logs
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_index_template/logs' 
+
+# data_stream logs类型默认的模板为logs,由多个组件模板组成,要修改配置的话
+# 需要查看当前模板引用的 logs@settings组件模板的具体配置，以确保在原有基础上修改。
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_component_template/logs@settings?pretty'
+
+# 在原有的logs@settings组件模板基础上修改配置,修改副本数为0
+curl -u elastic:elastic -XPUT 'http://10.194.65.135:9200/_component_template/logs@settings' -H 'Content-Type: application/json' -d'
+{
+  "template": {
+    "settings": {
+      "index": {
+        "number_of_replicas": 0,
+        "lifecycle": {
+          "name": "logs"
+        },
+        "codec": "best_compression",
+        "default_pipeline": "logs@default-pipeline",
+        "mapping": {
+          "total_fields": {
+            "ignore_dynamic_beyond_limit": "true"
+          },
+          "ignore_malformed": "true"
+        }
+      }
+    },
+    "data_stream_options": {
+      "failure_store": {
+        "enabled": true
+      }
+    }
+  }
+}'
 ```
 
+#### 1.4 elasticsearch常见问题处理
+#### 1.4.1 调整副本数（针对单节点集群）
+```shell
+# 情形一：调整副本数（针对单节点集群）
+# 如果您的环境是单节点开发或测试集群，这是最直接有效的方法。它将副本数设为0，牺牲高可用性以换取绿色状态。
+# 数据流：为特定的 Data Stream 的后备索引设置
+curl -u elastic:elastic -XPUT 'http://10.194.65.135:9200/.ds-logs-gd-virtual-station-old-production-*/_settings' -H 'Content-Type: application/json' -d'{
+"index.number_of_replicas": 0
+}'
 
+# 数据流：更推荐在索引模板中永久修改，影响后续创建的所有新索引
+curl -u elastic:elastic -XPUT 'http://10.194.65.135:9200/_index_template/logs ' -H 'Content-Type: application/json' -d'{
+"index_patterns": ["logs-*"],
+"template": {
+"settings": {
+"number_of_replicas": 0
+}
+}
+}'
 
-对于单节点集群，最直接有效的解决方案就是将所有索引的副本数（number_of_replicas）设置为0
-。这是因为Elasticsearch为了保障数据高可用，规定同一个索引的主分片和其副本分片不能存放在同一个节点上。在单节点环境下，副本分片没有其他节点可以分配，因此一直处于“未分配”状态，导致集群报黄
-。
-请按照以下步骤操作：
-设置全局副本数为0
-执行以下命令，将集群中所有现有索引的副本数设置为0。这能立即解决当前大量分片未分配的问题。
+# 标准索引和数据流：
+# 对于单节点集群，最直接有效的解决方案就是将所有索引的副本数（number_of_replicas）设置为0
+# 这是因为Elasticsearch为了保障数据高可用，规定同一个索引的主分片和其副本分片不能存放在同一个节点上。在单节点环境下，副本分片没有其他节点可以分配，因此一直处于“未分配”状态，导致集群报黄
 curl -u elastic:elastic -X PUT "http://10.194.65.135:9200/_all/_settings" -H 'Content-Type: application/json' -d'
 {
 "index.number_of_replicas": 0
 }
 '
-为未来索引创建设置默认模板（推荐）
-为了避免后续新创建的索引再次出现此问题，可以创建一个索引模板，自动为新索引设置副本数为0。
+
+# 标准索引和数据流： 为未来索引创建设置默认模板（推荐） ,为了避免后续新创建的索引再次出现此问题，可以创建一个索引模板，自动为新索引设置副本数为0。
 curl -u elastic:elastic -X PUT "http://10.194.65.135:9200/_template/zero_replicas_template" \
 -H 'Content-Type: application/json' \
 -d '{
@@ -77,58 +143,17 @@ curl -u elastic:elastic -X PUT "http://10.194.65.135:9200/_template/zero_replica
 "number_of_replicas": 0
 }
 }'
-✅ 验证解决效果
-完成上述设置后，进行以下检查来确认问题是否解决：
-再次检查集群健康状态：
-curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_cluster/health?pretty'
-稍等片刻，集群状态（status）应该会从 yellow​ 变为 green。同时，unassigned_shards的数量应该变为 0。
+```
 
-
-
-
-curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_cluster/allocation/explain?pretty'
-
-
-
-# 将一个现有索引的副本数改为 2
-curl -u elastic:elastic -X PUT "http://10.194.65.135:9200/my_existing_index/_settings" -H 'Content-Type: application/json' -d'
-{
-"index.number_of_replicas": 2
+#### 1.4.2 磁盘空间不足
+```shell
+# 如果是因为磁盘空间超过使用水位（默认85%），需要清理空间或扩容。临时方案是调整水位线（生产环境慎用）。
+# 提高低水位线（如到90%），允许继续分配分片.不推荐该方式,根本原因是磁盘空间不足,集群无法正常工作
+curl -u elastic:elastic -XPUT 'http://10.194.65.135:9200/_cluster/settings' -H 'Content-Type: application/json' -d'{
+"persistent": {
+"cluster.routing.allocation.disk.watermark.low": "90%"
 }
-
-
-
-# 将特定索引（.kibana-event-log-ds）的副本数设置为0
-curl -u elastic:elastic -X PUT "http://10.194.65.135:9200/.kibana-event-log-ds/_settings" -H 'Content-Type: application/json' -d'
-{
-"number_of_replicas": 0
-}
-'
-
-# 如果您想一劳永逸，为集群中所有现有索引设置副本数为0，可以使用以下命令
-curl -u elastic:elastic -X PUT "http://10.194.65.135:9200/_all/_settings" -H 'Content-Type: application/json' -d'
-{
-"number_of_replicas": 0
-}
-'
-
-
-# 检查特定索引（比如那个有问题的.kibana-event-log-ds）的设置
-curl -u elastic:elastic -XGET "http://10.194.65.135:9200/.kibana-event-log-ds/_settings?pretty"
-
-# 或者快速查看所有索引的副本数设置
-curl -u elastic:elastic -XGET "http://10.194.65.135:9200/_cat/indices?v&h=index,rep"
-
-
-curl -u elastic:elastic -XGET "http://10.194.65.135:9200/_cluster/allocation/explain?pretty" -H 'Content-Type: application/json' -d'
-{
-"index": "[你的索引名]",
-"shard": [分片号],
-"primary": [true或false]
-}
-'
-重点关注返回结果中的 "decision": "NO"和 "explanation"字段，这是阻止分配的根本原因 
-
+}'
 
 # 如果磁盘曾经达到洪水阶段水位线（95%），索引会被自动设置为只读块（read_only_allow_delete）
 curl -u elastic:elastic -XGET "http://10.194.65.135:9200/.kibana-event-log-ds/_settings?pretty" | grep read_only
@@ -139,10 +164,18 @@ curl -u elastic:elastic -X PUT "http://10.194.65.135:9200/_all/_settings" -H 'Co
 "index.blocks.read_only_allow_delete": null
 }
 '
+```
 
+#### 1.4.2 启用分片分配
+```shell
+# 检查并确保分片分配没有被人为关闭。
+# 确保分片分配是启用的
+curl -u elastic:elastic -XPUT 'http://10.194.65.135:9200/_cluster/settings' -H 'Content-Type: application/json' -d'{
+"persistent": {
+"cluster.routing.allocation.enable": "all"
+}
+}'
+```
 
-# 查看所有分片状态,检查输出中是否有 UNASSIGNED状态的分片。如果没有，说明所有分片都已分配
-curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_cat/shards?v'
+#### 1.5 elasticsearch配置索引生命周期管理（ILM）策略
 
-# 查看索引状态,确保所有索引的状态（status）都是 open，没有 red或 yellow
-curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_cat/indices?v'
