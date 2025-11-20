@@ -79,6 +79,7 @@ curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_component_template/log
 # 在原有的logs@settings组件模板基础上修改配置,修改副本数为0
 curl -u elastic:elastic -XPUT 'http://10.194.65.135:9200/_component_template/logs@settings' -H 'Content-Type: application/json' -d'
 {
+  "version": 18,
   "template": {
     "settings": {
       "index": {
@@ -101,7 +102,12 @@ curl -u elastic:elastic -XPUT 'http://10.194.65.135:9200/_component_template/log
         "enabled": true
       }
     }
-  }
+  },
+  "_meta": {
+    "managed": true,
+    "description": "default settings for the logs index template installed by x-pack"
+  },
+  "deprecated": false
 }'
 ```
 
@@ -128,6 +134,7 @@ curl -u elastic:elastic -XPUT 'http://10.194.65.135:9200/_index_template/logs ' 
 # 标准索引和数据流：
 # 对于单节点集群，最直接有效的解决方案就是将所有索引的副本数（number_of_replicas）设置为0
 # 这是因为Elasticsearch为了保障数据高可用，规定同一个索引的主分片和其副本分片不能存放在同一个节点上。在单节点环境下，副本分片没有其他节点可以分配，因此一直处于“未分配”状态，导致集群报黄
+# 该命令会删除所有现有副本
 curl -u elastic:elastic -X PUT "http://10.194.65.135:9200/_all/_settings" -H 'Content-Type: application/json' -d'
 {
 "index.number_of_replicas": 0
