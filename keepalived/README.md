@@ -1,6 +1,4 @@
-当前keepalived默认配置的是nginx检查脚本,请根据需要进行修改
-journalctl -u keepalived -n 20
-
+### 当前keepalived默认配置的是nginx检查脚本,请根据需要进行修改
 
 ### keepalived部署及调试
 ##### 1、在两个keepalived节点中分别查看日志进行验证

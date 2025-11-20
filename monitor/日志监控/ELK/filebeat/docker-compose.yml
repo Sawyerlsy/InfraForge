@@ -11,18 +11,20 @@ services:
     network_mode: host
     restart: always
     volumes:
-      - ./conf/filebeat.yml:/usr/share/filebeat/filebeat.yml
-      - /var/lib/docker/volumes/virtual-station-logs:/var/lib/docker/volumes/virtual-station-logs
-      - /var/lib/docker/containers:/var/lib/docker/containers
-      - ./data:/usr/share/filebeat/data # 持久化 Filebeat 的注册表位置，避免重复发送日志
+      - ./conf/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./data:/usr/share/filebeat/data:rw # 持久化 Filebeat 的注册表位置，避免重复发送日志
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/lib/docker/volumes:/var/lib/docker/volumes:ro
     command: filebeat -e --strict.perms=false # -e 输出日志到标准错误，便于调试
-    environment:
-      - "ES_JAVA_OPTS=-Xms64m -Xmx512m" # 设置 JVM 堆大小
-
-    #    command: ["/usr/share/filebeat/filebeat", "-e", "-d", "*"]  # 显式指定文件路径和命令
-
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: '1GB'
 
 # mkdir -p data && chmod -R 777 data
-
+# docker-compose --compatibility up -d
 # 验证配置是否正确: docker exec -it filebeat filebeat test config -c /usr/share/filebeat/filebeat.yml
 # 如果提示文件不是root,则需要设置 chown root.root ./conf/filebeat.yml
+# docker文档: https://www.elastic.co/docs/reference/beats/filebeat/running-on-docker
