@@ -35,7 +35,7 @@ services:
       memlock:
         soft: -1
         hard: -1
-    logging: # logstash 一旦开启调试日志,终端日志会不断的堆积在容器里面,可能导致磁盘刷爆
+    logging:
       driver: 'json-file'
       options:
         max-size: '100m'  # 每个日志文件最大100MB
