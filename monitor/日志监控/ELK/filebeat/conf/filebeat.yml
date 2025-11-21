@@ -1,5 +1,5 @@
-http.enabled: true
-http.port: 5066
+#http.enabled: true
+#http.port: 5066
 
 filebeat.inputs:
   - type: filestream
@@ -12,7 +12,6 @@ filebeat.inputs:
       - 'gc/.*'                  # 排除gc目录下的所有文件
       - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
       - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
-    harvester_limit: 10
     parsers:
       - multiline:
           type: pattern
@@ -39,7 +38,6 @@ filebeat.inputs:
       - 'gc/.*'                  # 排除gc目录下的所有文件
       - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
       - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
-    harvester_limit: 10
     parsers:
       - multiline:
           type: pattern
@@ -66,7 +64,6 @@ filebeat.inputs:
       - 'gc/.*'                  # 排除gc目录下的所有文件
       - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
       - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
-    harvester_limit: 10
     parsers:
       - multiline:
           type: pattern
@@ -93,7 +90,6 @@ filebeat.inputs:
       - 'gc/.*'                  # 排除gc目录下的所有文件
       - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
       - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
-    harvester_limit: 10
     parsers:
       - multiline:
           type: pattern
@@ -120,7 +116,6 @@ filebeat.inputs:
       - 'gc/.*'                  # 排除gc目录下的所有文件
       - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
       - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
-    harvester_limit: 10
     parsers:
       - multiline:
           type: pattern
@@ -147,7 +142,6 @@ filebeat.inputs:
       - 'gc/.*'                  # 排除gc目录下的所有文件
       - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
       - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
-    harvester_limit: 10
     parsers:
       - multiline:
           type: pattern
@@ -174,7 +168,6 @@ filebeat.inputs:
       - 'gc/.*'                  # 排除gc目录下的所有文件
       - '.*20[0-9]{2}[0-9]{2}[0-9]{2}(\.[0-9]*)?\.log$' # 排除logall20251018.0.log和logall20251018.log
       - '.*-20[0-9]{2}-[0-9]{2}-[0-9]{2}(\.[0-9]*)?\.log$' # 排除log-2025-10-18.0.log、log-2025-10-18.log
-    harvester_limit: 10
     parsers:
       - multiline:
           type: pattern
@@ -239,3 +232,5 @@ logging.files:
 # 限制一个input（输入配置）同时可以启动的harvester数量，避免因同时处理过多文件而消耗过多系统资源。默认值0，表示无限制
 # 如果input下面paths路径中总共有50个日志文件需要监控，harvester_limit设置为10，那么Filebeat会先启动10个harvester处理前10个文件
 # 当有harvester完成任务（如文件被关闭）后，再启动新的harvester,最终所有50个文件都会被处理，但不会同时启动50个harvester
+# 当启用harvester_limit并设置的值无法覆盖input下需要监控的所有文件时，close_inactive不能设置过大，否则活跃文件被长时间持有，占据了
+# harvester_limit的资源，会导致input下的其他文件长时间无法被处理
