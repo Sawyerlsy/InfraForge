@@ -3,10 +3,10 @@
 
 filebeat.inputs:
   - type: filestream
-    id: virtual-station-param-logs # 唯一标识
+    id: parameter-server-logs # 唯一标识
     enabled: true
     paths: # glob模式
-      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-param/**/*.log
+      - /var/lib/docker/volumes/virtual-station-logs/_data/parameter-server/**/*.log
     prospector.scanner.exclude_files:
       - '\.gz$'                  # 排除所有以.gz结尾的文件
       - 'gc/.*'                  # 排除gc目录下的所有文件
@@ -22,17 +22,17 @@ filebeat.inputs:
           timeout: 3s
     fields: # 需要用于搜索的字段
       zone: guangdong
-      app: virtual-station-old
-      service: virtual-station-param
+      app: virtual-station-rebuild
+      service: parameter-server
       env: prod
-      address: "10.194.66.175"
+      address: "10.194.66.229"
     fields_under_root: true # 让这些字段成为顶级字段，便于查询
 
   - type: filestream
-    id: virtual-station-charge-logs
+    id: fee-server-logs
     enabled: true
     paths:
-      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-charge/**/*.log
+      - /var/lib/docker/volumes/virtual-station-logs/_data/fee-server/**/*.log
     prospector.scanner.exclude_files:
       - '\.gz$'                  # 排除所有以.gz结尾的文件
       - 'gc/.*'                  # 排除gc目录下的所有文件
@@ -48,17 +48,17 @@ filebeat.inputs:
           timeout: 3s
     fields: # 需要用于搜索的字段
       zone: guangdong
-      app: virtual-station-old
-      service: virtual-station-charge
+      app: virtual-station-rebuild
+      service: fee-server
       env: prod
-      address: "10.194.66.175"
+      address: "10.194.66.229"
     fields_under_root: true # 让这些字段成为顶级字段，便于查询
 
   - type: filestream
-    id: virtual-station-list-logs
+    id: namelist-server-logs
     enabled: true
     paths:
-      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-list/**/*.log
+      - /var/lib/docker/volumes/virtual-station-logs/_data/namelist-server/**/*.log
     prospector.scanner.exclude_files:
       - '\.gz$'                  # 排除所有以.gz结尾的文件
       - 'gc/.*'                  # 排除gc目录下的所有文件
@@ -74,17 +74,17 @@ filebeat.inputs:
           timeout: 3s
     fields: # 需要用于搜索的字段
       zone: guangdong
-      app: virtual-station-old
-      service: virtual-station-list
+      app: virtual-station-rebuild
+      service: namelist-server
       env: prod
-      address: "10.194.66.175"
+      address: "10.194.66.229"
     fields_under_root: true # 让这些字段成为顶级字段，便于查询
 
   - type: filestream
-    id: virtual-station-psam-logs
+    id: psam-server-logs
     enabled: true
     paths:
-      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-psam/**/*.log
+      - /var/lib/docker/volumes/virtual-station-logs/_data/psam-server/**/*.log
     prospector.scanner.exclude_files:
       - '\.gz$'                  # 排除所有以.gz结尾的文件
       - 'gc/.*'                  # 排除gc目录下的所有文件
@@ -100,17 +100,17 @@ filebeat.inputs:
           timeout: 3s
     fields: # 需要用于搜索的字段
       zone: guangdong
-      app: virtual-station-old
-      service: virtual-station-psam
+      app: virtual-station-rebuild
+      service: psam-server
       env: prod
-      address: "10.194.66.175"
+      address: "10.194.66.229"
     fields_under_root: true # 让这些字段成为顶级字段，便于查询
 
   - type: filestream
-    id: virtual-station-trade-logs
+    id: emtc-server-logs
     enabled: true
     paths:
-      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-trade/**/all/logall.log
+      - /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/**/all/logall.log
     prospector.scanner.exclude_files:
       - '\.gz$'                  # 排除所有以.gz结尾的文件
       - 'gc/.*'                  # 排除gc目录下的所有文件
@@ -126,17 +126,17 @@ filebeat.inputs:
           timeout: 3s
     fields: # 需要用于搜索的字段
       zone: guangdong
-      app: virtual-station-old
-      service: virtual-station-trade
+      app: virtual-station-rebuild
+      service: emtc-server
       env: prod
-      address: "10.194.66.175"
+      address: "10.194.66.229"
     fields_under_root: true # 让这些字段成为顶级字段，便于查询
 
   - type: filestream
-    id: virtual-station-upload-logs
+    id: upload-server-logs
     enabled: true
     paths:
-      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-upload/**/*.log
+      - /var/lib/docker/volumes/virtual-station-logs/_data/upload-server/**/*.log
     prospector.scanner.exclude_files:
       - '\.gz$'                  # 排除所有以.gz结尾的文件
       - 'gc/.*'                  # 排除gc目录下的所有文件
@@ -152,17 +152,17 @@ filebeat.inputs:
           timeout: 3s
     fields: # 需要用于搜索的字段
       zone: guangdong
-      app: virtual-station-old
-      service: virtual-station-upload
+      app: virtual-station-rebuild
+      service: upload-server
       env: prod
-      address: "10.194.66.175"
+      address: "10.194.66.229"
     fields_under_root: true # 让这些字段成为顶级字段，便于查询
 
   - type: filestream
-    id: virtual-station-gateway-logs
+    id: gateway-server-logs
     enabled: true
     paths:
-      - /var/lib/docker/volumes/virtual-station-logs/_data/virtual-station-gateway/**/*.log
+      - /var/lib/docker/volumes/virtual-station-logs/_data/gateway-server/**/*.log
     prospector.scanner.exclude_files:
       - '\.gz$'                  # 排除所有以.gz结尾的文件
       - 'gc/.*'                  # 排除gc目录下的所有文件
@@ -178,10 +178,10 @@ filebeat.inputs:
           timeout: 3s
     fields: # 需要用于搜索的字段
       zone: guangdong
-      app: virtual-station-old
-      service: virtual-station-gateway
+      app: virtual-station-rebuild
+      service: gateway-server
       env: prod
-      address: "10.194.66.175"
+      address: "10.194.66.229"
     fields_under_root: true # 让这些字段成为顶级字段，便于查询
 
 

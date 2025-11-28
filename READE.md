@@ -1,4 +1,4 @@
-### 国产化问题集锦
+### 问题集锦
 ##### 1、银河麒麟系统可能预装了 Podman，而 Podman 与 Docker 的守护进程（dockerd）存在冲突。当两者同时运行时，可能导致权限问题
 ```shell
 # 卸载 Podman
@@ -61,3 +61,24 @@ cat /proc/sys/net/core/somaxconn    # 应为 10240
 ```
 > - Redis 集群部署时，这两个参数是必备优化项，可减少 Cannot allocate memory 错误和连接超时问题
 > - 若物理内存紧张，优先考虑 vm.overcommit_memory=2 并增加 Swap 空间
+
+
+#### 4、内存映射区域参数调整
+> #### vm.max_map_count 控制一个进程可以拥有的内存映射区域(maximum memory map areas)的最大数量
+> #### 适用场景：Elasticsearch、Redis、MongoDB等需要大量内存映射的数据库和应用
+```shell
+# 在文件末尾添加一行 vm.max_map_count=262144
+echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf
+# 重新加载sysctl配置，无需重启系统
+sudo sysctl -p
+
+# 验证
+# 方法1：使用sysctl命令
+sysctl vm.max_map_count
+
+# 方法2：查看proc文件系统
+cat /proc/sys/vm/max_map_count
+
+# 方法3：使用更详细的sysctl查询
+sysctl -n vm.max_map_count
+```

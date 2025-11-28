@@ -68,9 +68,14 @@ curl -u elastic:elastic -XGET "http://10.194.65.135:9200/_cluster/allocation/exp
 }
 '
 
+# 查看特定索引模式的分片分布
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_cat/shards/logs-*?v'
+
+# 查看所有模板
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_index_template?pretty' 
 
 # 查看指定模板的配置，如：logs
-curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_index_template/logs' 
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/_index_template/logs?pretty' 
 
 # data_stream logs类型默认的模板为logs,由多个组件模板组成,要修改配置的话
 # 需要查看当前模板引用的 logs@settings组件模板的具体配置，以确保在原有基础上修改。
@@ -109,6 +114,15 @@ curl -u elastic:elastic -XPUT 'http://10.194.65.135:9200/_component_template/log
   },
   "deprecated": false
 }'
+
+# 查看索引的详细设置和统计信息
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/.monitoring-kibana-7-2025.11.19/_stats'
+
+# 查看索引的设置
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/.monitoring-kibana-7-2025.11.19/_settings'
+
+# 查看索引的映射
+curl -u elastic:elastic -XGET 'http://10.194.65.135:9200/.monitoring-kibana-7-2025.11.19/_mapping'
 ```
 
 #### 1.4 elasticsearch常见问题处理
@@ -117,7 +131,7 @@ curl -u elastic:elastic -XPUT 'http://10.194.65.135:9200/_component_template/log
 # 情形一：调整副本数（针对单节点集群）
 # 如果您的环境是单节点开发或测试集群，这是最直接有效的方法。它将副本数设为0，牺牲高可用性以换取绿色状态。
 # 数据流：为特定的 Data Stream 的后备索引设置
-curl -u elastic:elastic -XPUT 'http://10.194.65.135:9200/.ds-logs-gd-virtual-station-old-production-*/_settings' -H 'Content-Type: application/json' -d'{
+curl -u elastic:elastic -XPUT 'http://10.194.65.135:9200/.ds-logs-guangdong-virtual-station-old-production-2025.11.20-000001/_settings' -H 'Content-Type: application/json' -d'{
 "index.number_of_replicas": 0
 }'
 
@@ -186,3 +200,16 @@ curl -u elastic:elastic -XPUT 'http://10.194.65.135:9200/_cluster/settings' -H '
 
 #### 1.5 elasticsearch配置索引生命周期管理（ILM）策略
 
+
+
+#### 1.6 测试分词
+```shell
+curl -u elastic:elastic -X POST "http://10.194.65.135:9200/_analyze?pretty" -H 'Content-Type: application/json' -d'
+{
+"analyzer": "standard",
+"text": "Your text to analyze here"
+}'
+```
+
+
+#### 1.7 分词器插件

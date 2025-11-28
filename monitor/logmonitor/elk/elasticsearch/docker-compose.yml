@@ -6,27 +6,31 @@ services:
       - seccomp:unconfined  # 解除线程创建限制
     cap_add:
       - SYS_RESOURCE       # 授予资源控制权限.为容器添加Linux的CAP_SYS_RESOURCE能力（Capability），允许其<200b><200b>突破内核资源限制
-    container_name: elasticsearch
+    container_name: es-single-node
     restart: always
     ports:
       - "9200:9200"
       - "9300:9300"
     environment:
       - TZ=Asia/Shanghai
-      - ELASTIC_PASSWORD=elastic # 超级管理员密码
-      - bootstrap.memory_lock=true #锁住内存 提高性能
-      - ES_JAVA_OPTS=-Xms2g -Xmx2g #设置启动内存大小 默认内存/最大内存
-      - discovery.type=single-node #单节点设置
-      - cluster.name=es-cluster
-      - node.name=es-node-1
+
+      - cluster.name=es-cluster # 集群名称,所有节点保持一致
+      - node.name=es-single-node # 节点唯一值标识,每个elasticsearch节点唯一
+      - network.publish_host=10.194.65.131 # 当前机器IP
       - network.host=0.0.0.0
+      - discovery.type=single-node #单节点设置
+
       - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=elastic # 超级管理员密码
       - xpack.monitoring.collection.enabled=true
       - xpack.security.http.ssl.enabled=false # 禁用Https
       - xpack.security.transport.ssl.enabled=false
+
+      - bootstrap.memory_lock=true #锁住内存 提高性能
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g #设置启动内存大小 默认内存/最大内存
       - http.cors.enabled=true #允许跨域，集群需要设置
       - http.cors.allow-origin="*" #跨域设置
-#      - http.cors.allow-headers=Authorization,X-Requested-With,Content-Type,Content-Length
+    #      - http.cors.allow-headers=Authorization,X-Requested-With,Content-Type,Content-Length
     volumes: #挂载文件
       - ./data:/usr/share/elasticsearch/data
       - ./logs:/usr/share/elasticsearch/logs
@@ -45,6 +49,13 @@ networks:
   default:
     name: elastic_net
 
+
+# 1、调整内存映射区域大小：max_map_count，详情操作参考：InfraForge/README.md
+# 2、提高进程可打开的文件描述符数量：nofile，详情参考：InfraForge/README.md
+
 # data、logs、plugins目录设置777权限：
 # mkdir -p data logs plugins && chmod -R 777 data logs plugins
 # http://ip:9200
+
+
+

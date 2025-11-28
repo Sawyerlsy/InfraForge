@@ -1,77 +1,61 @@
 version: "3.8"
 services:
-  es01:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
-    container_name: es01
-    environment:
-      - node.name=es01
-      - cluster.name=es-docker-cluster
-      - discovery.seed_hosts=es02,es03
-      - cluster.initial_master_nodes=es01,es02,es03
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-      - data01:/usr/share/elasticsearch/data
+  elasticsearch:
+    image: elasticsearch:9.2.1
+    security_opt:
+      - seccomp:unconfined  # 解除线程创建限制
+    cap_add:
+      - SYS_RESOURCE       # 授予资源控制权限.为容器添加Linux的CAP_SYS_RESOURCE能力（Capability），允许其<200b><200b>突破内核资源限制
+    container_name: es-node-1 # 容器名称与node.name保持一致
+    restart: always
     ports:
-      - 9200:9200
-    networks:
-      - elastic
-  es02:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
-    container_name: es02
+      - "9200:9200"
+      - "9300:9300"
     environment:
-      - node.name=es02
-      - cluster.name=es-docker-cluster
-      - discovery.seed_hosts=es01,es03
-      - cluster.initial_master_nodes=es01,es02,es03
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - TZ=Asia/Shanghai
+
+      - cluster.name=es-cluster # 集群名称,所有节点保持一致
+      - node.name=es-node-1 # 节点唯一值标识,每个elasticsearch节点唯一
+      - network.publish_host=10.194.65.131 # 当前机器IP
+      - network.host=0.0.0.0
+      - discovery.seed_hosts=10.194.65.133,10.194.65.134,10.194.65.135  # 所有节点IP
+      - cluster.initial_master_nodes=es-node-1,es-node-2,es-node-3  # 初始具有主节点资格的节点列表
+      - discovery.zen.minimum_master_nodes=2   # 防止"脑裂"的最小主节点数，公式通常为 (节点总数/2) + 1
+
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=elastic # 超级管理员密码
+      - xpack.monitoring.collection.enabled=true
+      - xpack.security.http.ssl.enabled=false # 禁用Https
+      - xpack.security.transport.ssl.enabled=false
+
+      - bootstrap.memory_lock=true #锁住内存 提高性能
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g #设置启动内存大小 默认内存/最大内存
+      - http.cors.enabled=true #允许跨域，集群需要设置
+      - http.cors.allow-origin="*" #跨域设置
+      #      - http.cors.allow-headers=Authorization,X-Requested-With,Content-Type,Content-Length
+
+    volumes: #挂载文件
+      - ./data:/usr/share/elasticsearch/data
+      - ./logs:/usr/share/elasticsearch/logs
+      - ./plugins:/usr/share/elasticsearch/plugins
     ulimits:
       memlock:
         soft: -1
         hard: -1
-    volumes:
-      - data02:/usr/share/elasticsearch/data
-    networks:
-      - elastic
-  es03:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
-    container_name: es03
-    environment:
-      - node.name=es03
-      - cluster.name=es-docker-cluster
-      - discovery.seed_hosts=es01,es02
-      - cluster.initial_master_nodes=es01,es02,es03
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-      - data03:/usr/share/elasticsearch/data
-    networks:
-      - elastic
-
-volumes:
-  data01:
-    driver: local
-  data02:
-    driver: local
-  data03:
-    driver: local
-
-networks:
-  elastic:
-    driver: bridge
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '100m'  # 每个日志文件最大100MB
+        max-file: '3'     # 最多保留3个日志文件
 
 
+# 1、调整内存映射区域大小：max_map_count，详情操作参考：InfraForge/README.md
+# 2、提高进程可打开的文件描述符数量：nofile，详情参考：InfraForge/README.md
 
-# grep vm.max_map_count /etc/sysctl.conf
-  #vm.max_map_count=262144
-# sysctl -w vm.max_map_count=262144
+# data、logs、plugins目录设置777权限：
+# mkdir -p data logs plugins && chmod -R 777 data logs plugins
+# http://ip:9200
 
+# 查看日志:观察日志，待出现 "published_address {10.194.65.131:9300}"及类似 "master node changed"的集群选举成功信息时，表示节点已加入集群
+# 查看集群状态：curl -u elastic:elastic "http://10.194.65.131:9200/_cluster/health?pretty"
+# 查看节点状态：curl -u elastic:elastic "http://10.194.65.131:9200/_cat/nodes?v"
