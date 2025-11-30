@@ -1,5 +1,5 @@
-### Redis集群部署
-##### 1、编译安装
+## Redis集群部署
+### 1、编译安装
 ```shell
 # 解压及编译安装
 tar xzf redis-6.2.19.tar.gz
@@ -8,12 +8,12 @@ make BUILD_TLS=yes && sudo make install PREFIX=/usr/local/redis
 sudo ln -s /usr/local/redis/bin/* /usr/local/bin/
 ```
 
-##### 2、创建目录
+### 2、创建目录
 ```shell
 # 创建目录
 mkdir -p /data/redis/{7001,7002,7003}/{data,logs,pid,conf}
 ```
-#### 3、修改配置
+### 3、修改配置
 ```shell
 vim /data/redis/redis_template.conf
 ```
@@ -54,7 +54,7 @@ pidfile /data/redis/{port}/pid/redis.pid
 logfile /data/redis/{port}/logs/redis.log
 ```
 
-#### 4、生成其他节点配置
+### 4、生成其他节点配置
 ```shell
 # 批量生成7002/7003配置
 for port in 7001 7002 7003; do
@@ -70,7 +70,7 @@ useradd -M -s /sbin/nologin redis
 chown -R redis:redis /data/redis
 ```
 
-#### 5、启动节点
+### 5、启动节点
 ```shell
 # 每台服务器启动3个实例
 redis-server /data/redis/7001/conf/redis.conf \
@@ -81,7 +81,7 @@ redis-server /data/redis/7001/conf/redis.conf \
 ps -ef | grep redis-server  # 应显示3个进程
 ```
 
-#### 6、创建集群
+### 6、创建集群
 ```shell
 redis-cli -a hgrica1@ --cluster create \
   192.168.1.101:7001 \
@@ -101,17 +101,19 @@ redis-cli -a hgrica1@ --cluster create \
 # 192.168.1.103:7008 和 192.168.1.103:7009 → 作为192.168.1.103:7007的从节点
 ```
 
-#### 7、集群验证与高可用测试
-##### 7.1、基础验证
+### 7、集群验证与高可用测试
+#### 7.1、基础验证
 ```shell
 # 检查集群状态
 redis-cli -a hgrica1@ -c -h 192.168.1.101 -p 7001 cluster info
 # 输出应包含：cluster_state:ok 和 cluster_slots_assigned:16384
-
+```
+```shell
 # 查看节点拓扑
 redis-cli -a hgrica1@ -c -h 192.168.1.101 -p 7001 cluster nodes
 # 确认每个主节点有2个从节点，且分布在其他物理机
-
+```
+```shell
 # 关闭redis
 redis-cli -a hgrica1@ -p 7001 shutdown
 ```
@@ -133,7 +135,7 @@ redis-cli -a hgrica1 -c -h 192.168.1.102 -p 7004 get foo  # 应返回"cluster_te
 ```
 
 
-#### 8、创建服务
+### 8、创建服务
 ##### 8.1、创建服务文件（以7001为例）
 ```shell
 vi /data/redis/redis_template.service
@@ -168,11 +170,11 @@ for port in 7001 7002 7003; do
 done
 ```
 
-#### 9、常用操作
+### 9、常用操作
 ##### 9.1、添加主节点
 ```shell
 # 添加新节点到集群,默认添加的是主节点（无槽位）
-redis-cli -a password --cluster add-node NEW_HOST:NEW_PORT EXISTING_HOST:EXISTING_PORT
+redis-cli -a hgrica1@ --cluster add-node NEW_HOST:NEW_PORT EXISTING_HOST:EXISTING_PORT
 
 
 # 添加主节点后，由于其初始状态下不包含任何哈希槽，需要手动或通过平衡操作为其分配槽位，它才能真正存储数据 
@@ -192,19 +194,22 @@ redis-cli -a yourpassword --cluster reshard 192.168.1.102:7004
 ```shell
 # EXISTING_HOST:EXISTING_PORT是集群发现的入口
 # master-id是cluster nodes中的主节点ID
-redis-cli -a password --cluster add-node NEW_HOST:NEW_PORT EXISTING_HOST:EXISTING_PORT --cluster-slave --cluster-master-id <master-id>
+redis-cli -a hgrica1@ --cluster add-node NEW_HOST:NEW_PORT EXISTING_HOST:EXISTING_PORT --cluster-slave --cluster-master-id <master-id>
+
+# 命令执行成功后会输出：New node added correctly
 ```
 
 ##### 9.3、让指定从节点成为主节点
-在从节点上执行 CLUSTER FAILOVER命令会发起一次有序的主从切换，原主节点会将其数据同步到该从节点，确保数据安全后再完成角色切换。这是最安全的手动提升方式
-在从节点上执行 CLUSTER FAILOVER时，流程如下:
-- step1: 执行 CLUSTER FAILOVER命令
+在从节点上执行 *CLUSTER FAILOVER* 命令会发起一次有序的主从切换，原主节点会将其数据同步到该从节点，确保数据安全后再完成角色切换。这是最安全的手动提升方式
+在从节点上执行 *CLUSTER FAILOVER* 时，流程如下:
+- step1: 执行 *CLUSTER FAILOVER* 命令
 - step2: 向集群请求主节点暂停写入
 - step3: 等待数据同步完成
 - step4: 数据同步异常（包括磁盘空间不足、网络异常、从节点宕机等）时，主节点检测到同步失败或者等待超时，主节点会恢复写入，故障转移失败，集群恢复正常;
 - step5: 数据同步成功后, 从节点发起选举，赢得集群中多数节点的投票后升级为主节点，原主节点成为新主节点的从节点，完成角色切换
 - step6: 新主节点恢复写入，故障转移完成
 ```shell
+# redis-cli -a hgrica1@ -h 10.194.68.225 -p 7008 cluster failover
 # 1. 连接到要提升的从节点
 redis-cli -a hgrica1@ -h 192.168.1.101 -p 7002
 
@@ -283,7 +288,7 @@ redis-cli -a hgrica1@ --cluster check 192.168.1.102:7004
 
 
 ##### 9.6、检查集群状态
-check命令可以对集群进行全面的健康检查，包括节点数量、角色、槽位分布、槽位状态等
+***check***命令可以对集群进行全面的健康检查，包括节点数量、角色、槽位分布、槽位状态等
 ```shell
 # 确保每个主节点有足够的从节点
 redis-cli -a hgrica1@ --cluster check 192.168.1.102:7004
@@ -300,8 +305,8 @@ redis-cli -a hgrica1@ --cluster check 192.168.1.102:7004
 从节点升级为主节点时，同步过程中或结束后可以验证数据是否同步完成
 
 > 关键指标： 
-> - master_repl_offset == slave_repl_offset 
-> - lag = 0（表示无延迟） 
+> - master_repl_offset == slave_repl_offset （理论上不可能完全一致,只要不持续增长，小于100kb即可）
+> - lag = 0（延迟秒数，0表示无延迟, 小于等于1都是正常的） 
 > - master_link_status: up
 
 - 检查复制偏移量
@@ -330,7 +335,120 @@ watch -n 0.5 "redis-cli -a hgrica1@ -h 192.168.1.101 -p 7002 INFO replication | 
 # slave_lag:0
 ```
 
-##### 9.3、计算健属于哪个槽
-```shell
-redis-cli -a password CLUSTER KEYSLOT <key_name>
+##### 9.8 修复开放槽位问题
+如果集群的16384个哈希槽中，有部分槽位没有被任何主节点负责，那么就会出现开放槽位问题。
+这个可能的原因如下:
+- 主节点故障且无可用从节点
+```text
+# 场景: 主节点宕机，且没有从节点或从节点也故障
+M: node1 [fail] slots: 0-5000 [OPEN]
+S: node2 [fail]  # 从节点也故障
+# 结果: 槽位0-5000变成开放槽位
 ```
+- 故障转移失败
+```text
+# 场景: 主节点下线，但从节点选举失败
+M: node1 [fail] slots: 5000-10000
+S: node2 [slave]  # 由于网络分区无法选举
+S: node3 [slave]  # 数据太旧不符合升级条件
+# 结果: 槽位5000-10000无人负责
+```
+- 集群重新分片中断
+```text
+# 场景: 数据迁移过程中操作被中断
+>>> Migrating slot 1234 from nodeA to nodeB
+[INTERRUPTED]  # 迁移过程被强制终止
+# 结果: 槽位1234处于"迁移中"状态，既不在A也不在B
+```
+- 节点移除操作不当
+```text
+# 场景: 移除主节点前未重新分配其槽位
+redis-cli --cluster del-node 10.0.0.1:7001 <node-id>
+# 警告: 节点负责的槽位将变成开放槽位
+```
+
+- 手动配置错误
+```text
+# 场景: 手动执行CLUSTER SETSLOT错误
+CLUSTER SETSLOT 1000 NODE <wrong-node-id>
+# 结果: 槽位1000指向不存在的节点
+```
+
+- 网络分区导致脑裂
+```text
+# 场景: 网络分区，部分节点无法通信
+节点组A: 认为节点组B已下线，选举新主节点
+节点组B: 认为自己正常，继续服务
+# 结果: 部分槽位在不同分区中有不同主节点，恢复后产生冲突
+```
+
+类似的错误信息如下:
+> Check for open slots...  
+> [WARNING] The following slots are open: 1000, 1001, 1002  
+> [ERROR] Not all 16384 slots are covered by nodes.  
+
+修复方法如下：
+- 方法1：使用 --cluster fix 自动修复
+```shell
+# 自动检测并修复开放槽位
+redis-cli -a hgrica1@ --cluster fix 10.194.68.223:7001
+
+# 修复过程:
+# 1. 扫描所有开放槽位
+# 2. 将开放槽位分配给健康的主节点
+# 3. 重新平衡集群状态
+```
+
+- 方法2：使用 --cluster reshard 手动重新分片
+```shell
+# 手动重新分配槽位
+redis-cli -a hgrica1@ --cluster reshard 10.194.68.223:7001
+
+# 交互式操作:
+How many slots do you want to move? 5462           # 输入要移动的槽位数
+What is the receiving node ID? dbde59ee...         # 输入目标节点ID
+Please enter all the source node IDs.
+  Type 'all' to use all the nodes as source nodes.
+  Type 'done' once you entered all the source nodes.
+Source node #1: all                                # 从所有节点抽取槽位
+```
+
+- 方法3：手动分配特定槽位
+```shell
+# 针对特定开放槽位进行分配
+# 步骤1: 连接到目标主节点
+redis-cli -a hgrica1@ -h 10.194.68.223 -p 7001
+
+# 步骤2: 手动添加槽位 (假设槽位1000-2000开放)
+10.194.68.223:7001> CLUSTER ADDSLOTS 1000 1001 1002 ... 2000
+
+# 或者使用脚本批量操作
+for slot in {1000..2000}; do
+  redis-cli -a hgrica1@ -h 10.194.68.223 -p 7001 CLUSTER ADDSLOTS $slot
+done
+```
+
+- 方法4：从备份恢复
+```shell
+# 如果数据丢失严重，从备份恢复
+# 步骤1: 停止所有Redis实例
+redis-cli -a hgrica1@ -h 10.194.68.223 -p 7001 SHUTDOWN
+
+# 步骤2: 恢复RDB/AOF备份文件
+cp /backup/dump.rdb /data/redis/dump.rdb
+
+# 步骤3: 重启集群并修复拓扑
+redis-cli -a hgrica1@ --cluster fix 10.194.68.223:7001
+```
+# redis-cli -a <你的密码> --cluster fix <集群中任意一个存活节点的IP:端口>
+redis-cli --cluster fix 10.194.68.223:7001
+
+##### 9.8、计算健属于哪个槽
+```shell
+redis-cli -a hgrica1@ CLUSTER KEYSLOT <key_name>
+```
+
+
+主节点和它的从节点不能在同一台机器上
+
+所有的主节点不能在同一台机器上，否则宕机后，从节点选举无法通过
