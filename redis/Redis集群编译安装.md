@@ -170,7 +170,7 @@ for port in 7001 7002 7003; do
 done
 ```
 
-### 9、常用操作
+### 9、常用操作和处理
 ##### 9.1、添加主节点
 ```shell
 # 添加新节点到集群,默认添加的是主节点（无槽位）
@@ -199,7 +199,7 @@ redis-cli -a hgrica1@ --cluster add-node NEW_HOST:NEW_PORT EXISTING_HOST:EXISTIN
 # 命令执行成功后会输出：New node added correctly
 ```
 
-##### 9.3、让指定从节点成为主节点
+##### 9.3、让指定从节点成为主节点（手动故障转移）
 在从节点上执行 *CLUSTER FAILOVER* 命令会发起一次有序的主从切换，原主节点会将其数据同步到该从节点，确保数据安全后再完成角色切换。这是最安全的手动提升方式
 在从节点上执行 *CLUSTER FAILOVER* 时，流程如下:
 - step1: 执行 *CLUSTER FAILOVER* 命令
@@ -225,10 +225,17 @@ CLUSTER FAILOVER TAKEOVER
 # 3. 验证节点角色变更
 CLUSTER NODES
 ```
+
+```text
+注意: 手动故障转移的选举是由操作人主动执行命令发起，而自动故障转移是当主节点被标记为客观下线后，由其从节点自动触发的。
+但不管是哪种情况，都需要集群中多数持有哈希槽的主节点投票同意（超过存活主节点总数的二分之一即N/2 + 1）才会成功。
+如果主节点全都宕机或者大部分都宕机，则无法完成故障转移。
+```
 ##### 9.4、删除从节点
 从节点没有槽位，直接删除即可
 ```shell
-redis-cli --cluster del-node <existing-host>:<existing-port> <node-id-of-slave-to-remove>
+# redis-cli --cluster del-node <existing-host>:<existing-port> <node-id-of-slave-to-remove>
+redis-cli -a hgrica1@ --cluster del-node 192.168.1.102:7004 9d529208e373ed9b6986005e3e62875e4c039abc
 ```
 
 ##### 9.5、删除主节点
@@ -440,15 +447,120 @@ cp /backup/dump.rdb /data/redis/dump.rdb
 # 步骤3: 重启集群并修复拓扑
 redis-cli -a hgrica1@ --cluster fix 10.194.68.223:7001
 ```
-# redis-cli -a <你的密码> --cluster fix <集群中任意一个存活节点的IP:端口>
-redis-cli --cluster fix 10.194.68.223:7001
-
 ##### 9.8、计算健属于哪个槽
 ```shell
 redis-cli -a hgrica1@ CLUSTER KEYSLOT <key_name>
 ```
 
+##### 9.9、批量执行命令
+redis-cli --cluster call会向集群中每个在线节点发送指定的命令，并返回执行结果  
+使用 --cluster-only-masters或 --cluster-only-replicas参数，可以指定命令仅在所有主节点或所有从节点上执行
+```shell
+# 批量配置管理
+redis-cli --cluster call <host:port> CONFIG SET timeout 300
 
-主节点和它的从节点不能在同一台机器上
+# 批量信息收集与监控
+redis-cli --cluster call <host:port> INFO MEMORY
 
-所有的主节点不能在同一台机器上，否则宕机后，从节点选举无法通过
+# 批量数据清理
+redis-cli --cluster call <host:port> FLUSHALL
+
+# 批量状态检查
+redis-cli --cluster call <host:port> DBSIZE
+```
+
+预期的结果如下:
+```text
+/data # redis-cli -a hgrica1@ --cluster call 10.194.68.225:7008 CLUSTER FORGET 9d529208e373ed9b6986005e3e62875e4c039abc
+Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.
+>>> Calling CLUSTER FORGET 9d529208e373ed9b6986005e3e62875e4c039abc
+10.194.68.225:7008: ERR Unknown node 9d529208e373ed9b6986005e3e62875e4c039abc
+
+10.194.68.223:7002: OK
+10.194.68.224:7006: OK
+10.194.68.224:7005: OK
+10.194.68.223:7001: OK
+10.194.68.224:7004: OK
+10.194.68.225:7009: ERR Unknown node 9d529208e373ed9b6986005e3e62875e4c039abc
+
+10.194.68.225:7007: ERR Unknown node 9d529208e373ed9b6986005e3e62875e4c039abc
+
+10.194.68.223:7003: OK
+```
+> ##### 返回 OK 的节点：已经处理成功，代表目标节点已经忘记了该节点。
+> ##### 返回 ERR Unknown node 的节点：代表目标节点不认识该节点,无需处理
+
+
+### 10、注意事项
+#### 10.1、reids节点宕机处理
+```text
+（1）检查集群状态：cluster nodes和使用--cluster check
+（2）宕机节点上能够重新启动,redis实例可以正常启动：
+    a. 集群状态正常且主从节点分布合理,则无需处理
+    b. 集群状态异常或者主从节点分布不合理,则需要手动修复集群状态
+（3）宕机节点无法重新启动,redis实例无法恢复：
+    a. 重新安装redis实例
+    b. 从集群中移除对应的fail节点
+    c. 将新的节点加入集群
+```
+> 注意：在redis集群中优先使用del node命令删除节点,如果del node失败再考虑CLUSTER FORGET命令。
+> CLUSTER FORGET命令是节点级别的，需要在每个节点中执行。并且CLUSTER FORGET有60秒遗忘保护期，对同一个节点ID执行后，60秒内不能再次执行
+- 方式一：使用批处理命令执行CLUSTER FORGET
+```shell
+# 清理失效从节点 29768f0e...
+redis-cli -a hgrica1@ --cluster call 10.194.68.224:7004 CLUSTER FORGET 29768f0e8683c214d1917b6f96089dfdc2cf7ccb
+
+# 清理失效主节点 caf6f392...
+redis-cli -a hgrica1@ --cluster call 10.194.68.224:7004 CLUSTER FORGET caf6f39296079ae02fd7e5e79f50ea90b8678740
+```
+预期的结果如下:
+```text
+/data # redis-cli -a hgrica1@ --cluster call 10.194.68.225:7008 CLUSTER FORGET 9d529208e373ed9b6986005e3e62875e4c039abc
+Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.
+>>> Calling CLUSTER FORGET 9d529208e373ed9b6986005e3e62875e4c039abc
+10.194.68.225:7008: ERR Unknown node 9d529208e373ed9b6986005e3e62875e4c039abc
+
+10.194.68.223:7002: OK
+10.194.68.224:7006: OK
+10.194.68.224:7005: OK
+10.194.68.223:7001: OK
+10.194.68.224:7004: OK
+10.194.68.225:7009: ERR Unknown node 9d529208e373ed9b6986005e3e62875e4c039abc
+
+10.194.68.225:7007: ERR Unknown node 9d529208e373ed9b6986005e3e62875e4c039abc
+
+10.194.68.223:7003: OK
+```
+
+- 方式二：使用脚本分别连接各个节点执行CLUSTER FORGET
+```shell
+#!/bin/bash
+PASSWORD="hgrica1@"
+NODE_IDS="29768f0e8683c214d1917b6f96089dfdc2cf7ccb caf6f39296079ae02fd7e5e79f50ea90b8678740 9d529208e373ed9b6986005e3e62875e4c039abc"
+
+NODES=(
+  "10.194.68.223:7001"
+  "10.194.68.223:7002"
+  "10.194.68.223:7003"
+  "10.194.68.224:7004"
+  "10.194.68.224:7005"
+  "10.194.68.224:7006"
+  "10.194.68.225:7007"
+  "10.194.68.225:7008"
+  "10.194.68.225:7009"
+)
+
+for NODE in "${NODES[@]}"; do
+  HOST=${NODE%:*}
+  PORT=${NODE#*:}
+  echo "Processing $HOST:$PORT"
+  
+  for NODE_ID in $NODE_IDS; do
+    redis-cli -a $PASSWORD -h $HOST -p $PORT CLUSTER FORGET $NODE_ID
+    sleep 1  # 避免过快执行
+  done
+done
+```
+> ##### 结果阐述：
+> ##### 返回 OK 的节点：已经处理成功，代表目标节点已经忘记了该节点。
+> ##### 返回 ERR Unknown node 的节点：代表目标节点不认识该节点,无需处理
