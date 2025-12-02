@@ -37,3 +37,4 @@ networks:
 
 # 在swarm集群的管理节点部署
 # docker stack deploy portainer-agent --compose-file=portainer-agent-stack.yml --with-registry-auth
+# core.harbor.domain:32388/portainer/agent
