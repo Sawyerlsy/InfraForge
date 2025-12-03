@@ -17,47 +17,6 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--web.enable-lifecycle"
 
-  grafana:
-    image: grafana/grafana-oss:12.1.0   # 固定版本确保稳定性
-    container_name: grafana
-    restart: always
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=hgrica1@
-      #      - GF_SERVER_PROTOCOL=https           # 强制HTTPS
-      - GF_LOG_LEVEL=warn      # 生产环境建议warn级日志，减少磁盘IO
-      #      - GF_DATABASE_URL=postgres://grafana:${DB_PASSWORD}@postgres/grafana  # 使用PostgreSQL替代SQLite
-      #      - GF_DATABASE_NAME=grafana
-      #      - GF_DATABASE_USER=root
-      #      - GF_DATABASE_PASSWORD=123456
-      - GF_AUTH_ANONYMOUS_ENABLED=false # 从此项开始为hertzBeat所需
-      - GF_AUTH_PROXY_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_USERS_VIEWERS_CAN_EDIT=true
-      - GF_SECURITY_ALLOW_EMBEDDING=true
-    volumes:
-      - ./grafana:/var/lib/grafana # 挂载的目录需要设置777权限,否则会提示权限不足
-      #- ./ssl/:/etc/grafana/ssl
-    healthcheck:              # 优化健康检查策略
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s       # 避免启动初期误判
-    logging:
-      options:
-        max-size: "100m"
-        max-file: "3"
-    deploy:                  # 资源限制防止OOM
-      resources:
-        limits:
-          memory: 2G
-          cpus: '1'
-    networks:
-      - monitor
-
   alertmanager:
     image: prom/alertmanager:v0.28.1
 #    volumes: # 根据需要定义具体的规则

@@ -1,0 +1,294 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://10.194.65.135:3100/loki/api/v1/push
+    batchsize: 1048576     # 单批次最大1MB（减少小包网络传输）[1](@ref)
+    batchwait: 1s          # 批次最大等待时间（平衡实时性与吞吐量）
+    timeout: 10s           # 网络请求超时（避免僵死连接）
+    backoff_config: # 失败重试策略（增强容错）
+      min_period: 500ms    # 最小重试间隔
+      max_period: 5m       # 最大重试间隔
+      max_retries: 10      # 最大重试次数
+#    basic_auth: # 基础认证
+#      username: "loki_user"
+#      password: "!secure_password!"
+
+# ===== 日志抓取任务配置 =====
+scrape_configs:
+  - job_name: parameter-server-logs # 任务1
+    pipeline_stages:
+      - drop:
+          expression: '^$'
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          max_wait_time: 3s
+          max_lines: 100
+          stages:
+            - multiline:
+                firstline: '^\s*(at|Caused by)'
+                max_wait_time: 3s
+      - regex:
+          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\S+):(?P<line>\d+)\s+:(?P<log_body>.*)'
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.999'
+          location: 'Asia/Shanghai'
+      - labels:
+          level:
+          host:
+
+    static_configs:
+      - targets: [ localhost ]
+        labels:
+          zone: guangdong
+          app: virtual-station-rebuild
+          service: parameter-server
+          env: prod
+          host: "server-229"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/parameter-server/full/*.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/parameter-server/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
+
+  - job_name: fee-server-logs # 任务1
+    pipeline_stages:
+      - drop:
+          expression: '^$'
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          max_wait_time: 3s
+          max_lines: 100
+          stages:
+            - multiline:
+                firstline: '^\s*(at|Caused by)'
+                max_wait_time: 3s
+      - regex:
+          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\S+):(?P<line>\d+)\s+:(?P<log_body>.*)'
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.999'
+          location: 'Asia/Shanghai'
+      - labels:
+          level:
+          host:
+
+    static_configs:
+      - targets: [ localhost ]
+        labels:
+          zone: guangdong
+          app: virtual-station-rebuild
+          service: fee-server
+          env: prod
+          host: "server-229"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/fee-server/full/*.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/fee-server/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
+
+
+  - job_name: namelist-server-logs # 任务1
+    pipeline_stages:
+      - drop:
+          expression: '^$'
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          max_wait_time: 3s
+          max_lines: 100
+          stages:
+            - multiline:
+                firstline: '^\s*(at|Caused by)'
+                max_wait_time: 3s
+      - regex:
+          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\S+):(?P<line>\d+)\s+:(?P<log_body>.*)'
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.999'
+          location: 'Asia/Shanghai'
+      - labels:
+          level:
+          host:
+
+    static_configs:
+      - targets: [ localhost ]
+        labels:
+          zone: guangdong
+          app: virtual-station-rebuild
+          service: namelist-server
+          env: prod
+          host: "server-229"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/namelist-server/full/*.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/namelist-server/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
+
+  - job_name: emtc-server-logs # 任务1
+    pipeline_stages:
+      - regex:
+          source: filename
+          expression: '.*/emtc-server/(?P<directory>[^/]+)/all/logall\.log$'
+      - labels:
+          directory:
+      - drop:
+          expression: '^$'
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          max_wait_time: 3s
+          max_lines: 100
+          stages:
+            - multiline:
+                firstline: '^\s*(at|Caused by)'
+                max_wait_time: 3s
+      - regex:
+          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\S+):(?P<line>\d+)\s+:(?P<log_body>.*)'
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.999'
+          location: 'Asia/Shanghai'
+      - labels:
+          level:
+          host:
+
+    static_configs:
+      - targets: [ localhost ]
+        labels:
+          zone: guangdong
+          app: virtual-station-rebuild
+          service: emtc-server
+          env: prod
+          host: "server-229"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/**/all/logall.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/emtc-server/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
+
+  - job_name: gateway-server-logs # 任务1
+    pipeline_stages:
+      - drop:
+          expression: '^$'
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          max_wait_time: 3s
+          max_lines: 100
+          stages:
+            - multiline:
+                firstline: '^\s*(at|Caused by)'
+                max_wait_time: 3s
+      - regex:
+          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\S+):(?P<line>\d+)\s+:(?P<log_body>.*)'
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.999'
+          location: 'Asia/Shanghai'
+      - labels:
+          level:
+          host:
+
+    static_configs:
+      - targets: [ localhost ]
+        labels:
+          zone: guangdong
+          app: virtual-station-rebuild
+          service: gateway-server
+          env: prod
+          host: "server-229"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/gateway-server/full/*.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/gateway-server/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
+
+
+  - job_name: log-server-logs # 任务1
+    pipeline_stages:
+      - drop:
+          expression: '^$'
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          max_wait_time: 3s
+          max_lines: 100
+          stages:
+            - multiline:
+                firstline: '^\s*(at|Caused by)'
+                max_wait_time: 3s
+      - regex:
+          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\S+):(?P<line>\d+)\s+:(?P<log_body>.*)'
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.999'
+          location: 'Asia/Shanghai'
+      - labels:
+          level:
+          host:
+
+    static_configs:
+      - targets: [ localhost ]
+        labels:
+          zone: guangdong
+          app: virtual-station-rebuild
+          service: log-server
+          env: prod
+          host: "server-229"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/log-server/full/*.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/log-server/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
+
+
+  - job_name: psam-server-logs # 任务1
+    pipeline_stages:
+      - drop:
+          expression: '^$'
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          max_wait_time: 3s
+          max_lines: 100
+          stages:
+            - multiline:
+                firstline: '^\s*(at|Caused by)'
+                max_wait_time: 3s
+      - regex:
+          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\S+):(?P<line>\d+)\s+:(?P<log_body>.*)'
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.999'
+          location: 'Asia/Shanghai'
+      - labels:
+          level:
+          host:
+
+    static_configs:
+      - targets: [ localhost ]
+        labels:
+          zone: guangdong
+          app: virtual-station-rebuild
+          service: psam-server
+          env: prod
+          host: "server-229"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/psam-server/full/*.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/psam-server/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
+
+  - job_name: upload-server-logs # 任务1
+    pipeline_stages:
+      - drop:
+          expression: '^$'
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\s+(INFO|ERROR|WARN|DEBUG)\s+\d+\s+---\s+\[[^\]]+\]'
+          max_wait_time: 3s
+          max_lines: 100
+          stages:
+            - multiline:
+                firstline: '^\s*(at|Caused by)'
+                max_wait_time: 3s
+      - regex:
+          expression: '(?s)^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<level>\w+)\s+\d+\s+---\s+\[(?P<thread>[^\]]+)\]\s+(?P<class>\S+)\s+(?P<method>\S+):(?P<line>\d+)\s+:(?P<log_body>.*)'
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.999'
+          location: 'Asia/Shanghai'
+      - labels:
+          level:
+          host:
+
+    static_configs:
+      - targets: [ localhost ]
+        labels:
+          zone: guangdong
+          app: virtual-station-rebuild
+          service: upload-server
+          env: prod
+          host: "server-229"
+          __path__: /var/lib/docker/volumes/virtual-station-logs/_data/upload-server/full/*.log
+          __path_exclude__: /var/lib/docker/volumes/virtual-station-logs/_data/upload-server/**/{*.gz,*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.log,*[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*.log,gc/**}
+

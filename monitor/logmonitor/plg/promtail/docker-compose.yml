@@ -23,6 +23,12 @@ services:
         limits:
           cpus: '0.75'
           memory: '1GB'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"  # 每个日志文件最大20MB
+        max-file: "10"   # 轮转保留10个文件，总计约200MB
+        compress: "true" # 启用压缩，节省空间（可选）
 
 # mkdir -p positions && chmod -R 777 positions
 # 检查配置是否正确：docker-compose exec promtail promtail -config.file=/etc/promtail/config.yml -check-syntax

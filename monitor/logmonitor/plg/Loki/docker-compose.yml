@@ -1,4 +1,4 @@
-version: "3"
+version: "3.8"
 services:
   loki:
     container_name: loki
@@ -14,10 +14,15 @@ services:
       resources:
         limits:
           memory: 8G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"  # 每个日志文件最大20MB
+        max-file: "10"   # 轮转保留10个文件，总计约200MB
+        compress: "true" # 启用压缩，节省空间（可选）
 
+# mkdir -p data && chmod 777 data
 # docker-compose --compatibility up -d
-# mkdir -p data
-# chmod 777 data
 
 # 删除指定标签、时间范围的日志
 # curl -X POST "http://10.194.68.225:3100/loki/api/v1/delete?query={zone=\"guangdong\",app=\"virtual-station-new\"}&start=1735660800000000000&end=1747324800000000000" -H "Content-Type: application/json"

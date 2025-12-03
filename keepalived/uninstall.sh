@@ -47,7 +47,6 @@ echo -e "${GREEN}[步骤4] 移除系统服务...${NC}"
 rm -fv /etc/systemd/system/keepalived.service
 rm -fv /usr/lib/systemd/system/keepalived.service
 rm -fv /etc/systemd/system/multi-user.target.wants/keepalived.service
-systemctl daemon-reload
 
 # 5. 删除日志和临时文件
 echo -e "${GREEN}[步骤5] 清理日志...${NC}"
@@ -58,6 +57,8 @@ rm -fv /var/run/keepalived.pid        # PID文件
 echo -e "${GREEN}[步骤6] 清理环境配置...${NC}"
 rm -fv /etc/sysconfig/keepalived      # 环境变量
 rm -fv /etc/init.d/keepalived         # SysVinit脚本（兼容旧版）
+
+systemctl daemon-reload
 
 echo -e "${GREEN}>>> 卸载完成！验证步骤：${NC}"
 echo "1. 检查进程: ps aux | grep keepalived"

@@ -40,8 +40,8 @@ vim /etc/docker/daemon.json
 {
   "log-driver": "json-file",
   "log-opts": {
-    "max-size": "100m",
-    "max-file": "3"
+    "max-size": "20m",
+    "max-file": "10"
   }
 }
 
@@ -55,7 +55,9 @@ docker info --format '{{.LoggingDriver}}'
 # 查看容器的具体日志配置
 docker inspect <container_id> | grep LogConfig -A 10
 ```
-> - 注意：日志轮转配置后仅对之后新增的容器生效,旧容器的日志不会被轮转
+> - 注意：日志轮转配置后仅对之后新增的容器生效,旧容器的日志不会被轮转.对于旧容器有两种方式处理:
+>   - 重新创建容器
+>   - 在docker compose配置文件中配置logging
 
 ### 常用功能
 #### 1、清理镜像和容器

@@ -1,0 +1,45 @@
+version: '3.8'
+services:
+  grafana:
+    image: grafana/grafana-oss:12.1.0   # 固定版本确保稳定性
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=hgrica1@
+      - GF_LOG_LEVEL=warn      # 生产环境建议warn级日志，减少磁盘IO
+      - GF_AUTH_ANONYMOUS_ENABLED=false # 从此项开始为hertzBeat所需
+      - GF_AUTH_PROXY_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_USERS_VIEWERS_CAN_EDIT=true
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+    volumes:
+      - ./data:/var/lib/grafana # 挂载的目录需要设置777权限,否则会提示权限不足
+    healthcheck: # 优化健康检查策略
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s       # 避免启动初期误判
+    logging:
+      options:
+        max-size: "100m"
+        max-file: "3"
+    deploy: # 资源限制防止OOM
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1'
+    networks:
+      - monitor
+
+
+networks:
+  monitor:
+    name: grafana-net
+
+
+# mkdir -p data && chmod -R 777 data
+# docker-compose --compatibility up -d
