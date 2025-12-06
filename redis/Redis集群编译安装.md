@@ -491,6 +491,39 @@ Warning: Using a password with '-a' or '-u' option on the command line interface
 > ##### 返回 ERR Unknown node 的节点：代表目标节点不认识该节点,无需处理
 
 
+##### 9.10、修复集群信息不一致
+如果cluster nodes能够显示7003节点,但是check命令不显示，并且使用forget命令无法遗忘7003节点，此时可以考虑使用使用CLUSTER RESET HARD重置节点的集群信息。
+
+作用： 重置单个节点的集群状态
+
+- 清空该节点的所有集群信息（节点表、槽位分配等）
+
+- 重置节点ID（生成新的随机ID）
+
+- 将节点设置为独立模式（不再是集群的一部分）
+
+- 不影响集群中的其他节点
+
+使用场景：
+- 节点配置错误需要重新加入集群
+- 节点数据损坏需要重新初始化
+- 节点被意外移除后需要重新加入
+- 节点层面的故障恢复
+
+```shell
+# 1. 在7003节点上重置集群状态
+# 会清除节点的集群信息，如果节点是主节点且持有数据，需要先使用FLUSHALL等命令清空数据，否则重置可能不成功
+# 这个命令通常不应该在一个正常运行的集群中对一个健康的节点直接使用
+redis-cli -a hgrica1@ -h 10.194.68.223 -p 7003 CLUSTER RESET HARD
+
+# 2. 将7003重新加入集群
+redis-cli -a hgrica1@ --cluster add-node 10.194.68.223:7003 10.194.68.224:7004 --cluster-slave --cluster-master-id dbde59ee6d2723f9404154328a7929010a7e678a
+
+# 3. 检查集群节点信息是否同步
+redis-cli -a hgrica1@ -h 10.194.68.224 -p 7004 CLUSTER NODES | grep 7003
+```
+
+
 ### 10、注意事项
 #### 10.1、reids节点宕机处理
 ```text
