@@ -1,29 +1,38 @@
-version: '3.1'
+version: '3.8'
 services:
   mysql:
-    image: mysql:8.0
+    image: mysql:8.4.7
     container_name: mysql
     hostname: mysql
+    restart: always
     command:
-      --authentication_policy=mysql_native_password
+      --mysql-native-password=ON
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_general_ci
       --lower_case_table_names=1
       --explicit_defaults_for_timestamp=true
       --log_bin_trust_function_creators=1
       --max_connections=1000
-    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: pw@12345
-      TZ: Asia/Shanghai # 时区配置亚洲上海
+      - TZ=Asia/Shanghai
+      - MYSQL_ROOT_PASSWORD=hgrica1@
     volumes:
       - ./data:/var/lib/mysql
-      #- ./config/my.cnf:/etc/my.cnf
     ports:
       - "3306:3306"
     networks:
-      - app_net
+      - mysql_net
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-phgrica1@" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 networks:
-  app_net:
-    external: true
+  mysql_net:
+    name: mysql_net
+
+
+# mysql8.4不支持直接配置mysql-native-password插件,如果需要使用旧版的密码验证,需要在命令中执行
+#

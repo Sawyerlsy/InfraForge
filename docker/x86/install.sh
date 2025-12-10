@@ -269,7 +269,9 @@ main() {
     stage_start "阶段五：使用配置"
     step_info "1. 用户权限管理"
     step_action "添加用户到 docker 组:"
+    echo -e "    sudo groupadd docker"
     echo -e "    sudo usermod -aG docker <用户名>"
+    echo -e "    newgrp docker"
     step_ok "生效方式: 注销后重新登录"
 
     step_info "2. 镜像加速配置"

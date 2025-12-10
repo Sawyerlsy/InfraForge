@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:18.1
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: hgrica1@ # 【必须】设置超级用户密码[citation:1][citation:3]
+      POSTGRES_USER: postgres # 【可选】指定用户名，默认是postgres[citation:3]
+      POSTGRES_DB: postgres # 【可选】指定初始数据库，默认与用户名相同[citation:3]
+      PGDATA: /var/lib/postgresql/data/pgdata # 【可选】自定义数据存储路径[citation:2]
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+
+
+
+
