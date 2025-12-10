@@ -32,6 +32,7 @@ services:
       --maxmemory-policy volatile-lru
       --tcp-backlog 10240
       --cluster-replica-validity-factor 10
+      --repl-timeout 60
       --protected-mode no
       --daemonize no
     deploy:
@@ -68,6 +69,7 @@ services:
       --maxmemory-policy volatile-lru
       --tcp-backlog 10240
       --cluster-replica-validity-factor 10
+      --repl-timeout 60
       --protected-mode no
       --daemonize no
     deploy:
@@ -104,6 +106,7 @@ services:
       --maxmemory-policy volatile-lru
       --tcp-backlog 10240
       --cluster-replica-validity-factor 10
+      --repl-timeout 60
       --protected-mode no
       --daemonize no
     deploy:

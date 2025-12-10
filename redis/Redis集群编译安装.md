@@ -32,6 +32,7 @@ cluster-config-file nodes-{port}.conf # 自动生成的集群元数据文件
 cluster-node-timeout 15000        # 节点失联超时（毫秒）
 cluster-replica-validity-factor 10 # 从节点有效性验证
 min-replicas-to-write 1           # 防脑裂：至少1个从节点同步才允许写入[4](@ref)
+repl-timeout 60                    # 复制超时（秒）
 
 # 持久化与内存
 dir /data/redis/{port}/data         # 数据存储路径

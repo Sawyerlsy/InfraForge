@@ -24,3 +24,4 @@ services:
 # reuseport 优化主要解决的是入口流量的高并发接收问题
 # 检查reuseport是否起作用: sudo ss -lnp | grep :8848
 # 如果启用了 reuseport，每个Worker进程都会有一个独立、完全隔离的监听套接字。ss 命令的输出会像下面这样，显示多个独立的监听条目，每个条目只关联一个进程：
+# nginx -T | grep -n -E "client_max_body_size|client_body_buffer_size"
