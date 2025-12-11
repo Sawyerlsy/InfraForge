@@ -1,0 +1,9 @@
+[ntp_client]
+10.194.65.130  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN0158" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN0158"
+10.194.65.131  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN0158" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN0158"
+10.194.65.133  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN0158" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN0158"
+10.194.65.134  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN0158" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN0158"
+10.194.65.135  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN0158" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN0158"
+10.194.65.135  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN0158" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN0158"
+10.194.65.135  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN0158" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN0158"
+10.194.65.135  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN0158" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN0158"

@@ -1,0 +1,65 @@
+# hosts 的值是第一步配置的分组名  all是全部  如果想指定某组。则填写对应名
+---
+- name: Install Chrony
+  hosts: all
+  become: yes
+  ignore_errors: true
+  tasks:
+    - name: install ssh key
+      authorized_key:
+        user: root
+        key: "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
+        state: present
+      tags:
+       - chrony
+    - name: Create installation directory
+      file:
+        path: /opt/backup/chrony_install
+        state: directory
+        mode: '0755'
+      become: true
+      tags:
+       - chrony
+    - name: Copy chrony.zip binary and dependencies
+      copy:
+        src: ./chrony.zip
+        dest: /opt/backup/chrony_install
+        force: yes
+      become: true
+      tags:
+       - chrony
+    - name: Extract chrony.zip installation files
+      unarchive:
+        src: /opt/backup/chrony_install/chrony.zip
+        dest: /opt/backup/chrony_install/
+        remote_src: yes
+      tags:
+       - chrony
+    - name: Install Chrony service
+      shell: |
+        rpm -Uvh /opt/backup/chrony_install/*.rpm --nodeps --force
+      become: true
+      tags:
+       - chrony
+      when: inventory_hostname in groups['x86_64']
+    - name: Copy chrony.conf binary and dependencies
+      copy:
+        src: ./chrony.conf
+        dest: /etc/chrony.conf
+        force: yes
+      tags:
+        - chrony_client
+    - name: Start Chrony service
+      become: yes
+      service:
+        name: chronyd
+        state: restarted
+      tags:
+       - chrony_client
+    - name: Enable Chrony service on boot
+      become: yes
+      service:
+        name: chronyd
+        enabled: yes
+      tags:
+       - chrony_client

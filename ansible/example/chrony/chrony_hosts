@@ -1,0 +1,20 @@
+[x86_64]
+10.194.65.130  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN0158" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN0158"
+10.194.65.131  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN0658" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN0658"
+10.194.65.133  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN1658" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN1658"
+10.194.65.134  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN2158" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN2158"
+10.194.65.135  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN2658" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN2658"
+10.194.65.143  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN1708" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN1708"
+10.194.65.144  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN2208" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN2208"
+10.194.66.175  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN2858" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN2858"
+10.194.66.229  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN4613" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN4613"
+10.194.66.176  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN3358" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN3358"
+10.194.65.136  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN3158" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN3158"
+10.194.66.243  ansible_ssh_user="hgits" ansible_ssh_pass="vgt6&UHN1713" ansible_become_method="sudo" ansible_become_user="root" ansible_become_pass="vgt6&UHN1713"
+
+[arm64]
+10.194.68.221  ansible_ssh_user="root" ansible_ssh_pass="2wsx+{:>1228"
+10.194.68.222  ansible_ssh_user="root" ansible_ssh_pass="2wsx+{:>2228"
+10.194.68.223  ansible_ssh_user="root" ansible_ssh_pass="2wsx+{:>3228"
+10.194.68.224  ansible_ssh_user="root" ansible_ssh_pass="2wsx+{:>4228"
+10.194.68.225  ansible_ssh_user="root" ansible_ssh_pass="2wsx+{:>5228"
