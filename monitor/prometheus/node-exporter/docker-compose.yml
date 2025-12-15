@@ -1,17 +1,22 @@
+version: '3.8'
 services:
-  # Node 资源监控（服务器 CPU/内存/磁盘）# 每个服务器部署一个exporter
-  # docker run -d --name node-exporter --network host --pid host --volume /:/host:ro,rslave --restart unless-stopped prom/node-exporter:v1.9.1 --path.rootfs=/host
   node_exporter:
     image: prom/node-exporter:v1.9.1
     container_name: node-exporter
+    restart: always
     command:
       - '--path.rootfs=/host'
     network_mode: host
     pid: host
-    restart: unless-stopped
     volumes:
       - '/:/host:ro,rslave'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 200M
 
-networks:
-  monitor:
-    name: node_exporter
+
+# docker-compose --compatibility up -d
+# Node 资源监控（服务器 CPU/内存/磁盘）# 每个服务器部署一个exporter
+# docker run -d --name node-exporter --network host --pid host --volume /:/host:ro,rslave --restart unless-stopped prom/node-exporter:v1.9.1 --path.rootfs=/host

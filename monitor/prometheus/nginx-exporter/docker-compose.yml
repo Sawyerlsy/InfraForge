@@ -1,14 +1,14 @@
+version: '3.8'
 services:
-  # Nginx监控
-  # docker run -d --name nginx-exporter -p 9113:9113 --restart unless-stopped nginx/nginx-prometheus-exporter:1.4.2 --nginx.scrape-uri=http://10.194.68.221/stub_status
   nginx-exporter: # 建议每个Nginx服务器部署一个exporter
     image: nginx/nginx-prometheus-exporter:1.4.2
+    restart: always
     ports:
       - "9113:9113"
     command:
       - "--nginx.scrape-uri=http://10.194.68.221/stub_status" # 改成指定的地址
-    restart: unless-stopped
 
-networks:
-  monitor:
-    name: nginx_exporter
+
+# Nginx监控
+# docker run -d --name nginx-exporter -p 9113:9113 --restart unless-stopped nginx/nginx-prometheus-exporter:1.4.2 --nginx.scrape-uri=http://10.194.68.221/stub_status
+# docker-compose --compatibility up -d

@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  mysql-exporter:
+    image: prom/mysqld-exporter:v0.17.2
+    container_name: mysql-exporter
+    restart: always
+    ports:
+      - "9104:9104"
+    volumes:
+      - ./conf/my.cnf:/.my.cnf  # 挂载配置文件到根目录
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 200M
+
+# docker-compose --compatibility up -d

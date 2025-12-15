@@ -3,7 +3,8 @@ services:
   prometheus:
     image: prom/prometheus:v3.5.0
     container_name: prometheus
-    volumes:
+    restart: always
+    volumes: # data和rules需要设置777权限
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./prometheus/rules/:/etc/prometheus/rules/ # 挂载的目录需要设置777权限,否则会提示权限不足
       - ./prometheus/data:/prometheus  # 挂载的目录需要设置777权限,否则会提示权限不足
@@ -11,7 +12,6 @@ services:
       - "9090:9090"
     networks:
       - monitor
-    restart: always
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -27,69 +27,37 @@ services:
     networks:
       - monitor
 
-  # Node 资源监控（服务器 CPU/内存/磁盘）# 每个服务器部署一个exporter
-  # docker run -d --name node-exporter --network host --pid host --volume /:/host:ro,rslave --restart unless-stopped prom/node-exporter:v1.9.1 --path.rootfs=/host
-#  node_exporter:
-#    image: prom/node-exporter:v1.9.1
-#    container_name: node-exporter
-#    command:
-#      - '--path.rootfs=/host'
-#    network_mode: host
-#    pid: host
-#    restart: unless-stopped
-#    volumes:
-#      - '/:/host:ro,rslave'
-
-  # Nginx监控
-  # docker run -d --name nginx-exporter -p 9113:9113 --restart unless-stopped nginx/nginx-prometheus-exporter:1.4.2 --nginx.scrape-uri=http://10.194.68.221/stub_status
-#  nginx-exporter: # 建议每个Nginx服务器部署一个exporter
-#    image: nginx/nginx-prometheus-exporter:1.4.2
-#    ports:
-#      - "9113:9113"
-#    command:
-#      - "--nginx.scrape-uri=http://10.194.68.221/stub_status"
-#      - "--nginx.scrape-uri=http://10.194.68.222/stub_status"
-#    restart: unless-stopped
-
   redis-exporter: # Redis集群监控
     image: oliver006/redis_exporter:v1.55.0
     container_name: redis-exporter
+    restart: always
     ports:
       - "9121:9121"
     environment:
       # 指定所有集群节点（逗号分隔）
-      REDIS_ADDR: "10.194.68.223:7001,10.194.68.223:7002,10.194.68.223:7003,10.194.68.224:7004,10.194.68.224:7005,10.194.68.224:7006,10.194.68.225:7007,10.194.68.225:7008,10.194.68.225:7009"
+      REDIS_ADDR: "172.31.0.14:6391,172.31.0.14:6392,172.31.0.14:6393,172.31.0.15:6394,172.31.0.15:6395,172.31.0.15:6396,172.31.0.16:6397,172.31.0.16:6398,172.31.0.16:6399"
       # 若集群有密码，需添加
       REDIS_PASSWORD: "hgrica1@"
-    networks:
-      - monitor
-
-  mysql-exporter:
-    image: prom/mysqld-exporter:v0.17.2
-    container_name: mysql-exporter
-    ports:
-      - "9104:9104"
-    volumes:
-      - ./mysql-exporter/.my.cnf:/.my.cnf  # 挂载配置文件到根目录
     networks:
       - monitor
 
   kafka-exporter:
     image: danielqsj/kafka-exporter:v1.9.0
     container_name: kafka-exporter
+    restart: always
     ports:
       - "9308:9308"
     command:
-      - "--kafka.server=10.194.68.176:9091"
-      - "--kafka.server=10.194.68.177:9092"
-      - "--kafka.server=10.194.68.178:9093"
-    restart: unless-stopped
+      - "--kafka.server=172.31.0.6:9092"
+      - "--kafka.server=172.31.0.7:9092"
+      - "--kafka.server=172.31.0.8:9092"
     networks:
       - monitor
 
   blackbox-exporter:
     image: prom/blackbox-exporter:v0.27.0
     container_name: blackbox-exporter
+    restart: always
     ports:
       - "9115:9115"  # Blackbox Exporter 默认端口
     volumes:
