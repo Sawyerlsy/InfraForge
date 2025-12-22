@@ -3,12 +3,13 @@ services:
   nacos1:
     image: sawyerlsy/nacos:v2.5.1-local
     container_name: nacos-node1
+    restart: always
     network_mode: host # 默认为bridge,这里直接使用宿主机网络栈，避免NAT转换,提高吞吐量和降低延迟
     environment:
       - TZ=Asia/Shanghai  # 指定时区
       - PREFER_HOST_MODE=ip
       - MODE=cluster  # 单节点部署时将MODE=cluster改成standalone
-      - SPRING_DATASOURCE_PLATFORM=gauss
+      - SPRING_DATASOURCE_PLATFORM=gauss # 支持 mysql、gauss、dm
       - DB_HOST=10.194.68.203
       - DB_NAME=nacos
       - DB_PORT=8000
@@ -29,4 +30,3 @@ services:
       - "9849:9849"   # Server gRPC
     volumes:
       - ./logs:/home/nacos/logs
-    restart: always

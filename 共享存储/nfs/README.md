@@ -10,3 +10,10 @@ yum install --downloadonly --downloaddir=./ nfs-utils libnfsidmap keyutils libev
 # 强制安装
 rpm -Uvh ./*.rpm --nodeps --force
 ```
+
+
+```shell
+# 查看具体的挂载地址
+df -hT
+mount | grep '/var/lib/docker/volumes/virtual-station-nas/_data'
+```

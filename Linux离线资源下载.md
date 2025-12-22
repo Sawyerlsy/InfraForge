@@ -75,6 +75,7 @@ mkdir -p chrony-offline/ubuntu && cd chrony-offline/ubuntu
 # 2. `--recurse, --no-recommends...`: 递归列出所有必须的依赖，并过滤掉推荐、建议等非必须包。
 # 3. `grep "^\w"`: 使用正则表达式提取出纯软件包名称行。
 # 4. `apt-get download`: 下载前面列出的所有软件包。
+# apt-get download默认情况下不允许使用root用户进行下载,如果提示相关问题,可以考虑切换用户
 apt-get download $(apt-cache depends --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances chrony | grep "^\w")
 
 # 步骤 4：打包所有文件以便传输
@@ -86,6 +87,9 @@ tar -czf ../chrony-offline-ubuntu.tar.gz .
 # 步骤 1：解压离线安装包
 cd /tmp
 tar -xzf chrony-offline-ubuntu.tar.gz
+
+# 卸载自带的时钟同步服务
+sudo dpkg --purge systemd-timesyncd
 
 # 步骤 2：安装所有 DEB 包
 sudo dpkg -i *.deb

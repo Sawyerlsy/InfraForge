@@ -318,7 +318,7 @@ global_defs {
     #smtp_connect_timeout 30
 
     #运行keepalived的机器的一个标识，通常可设为hostname。故障发生时，发邮件时显示在邮件主题中的信息。
-    router_id NGINX-1
+    router_id Keepalived-$ROLE
     vrrp_skip_check_adv_addr
     vrrp_garp_interval 0.5
     vrrp_gna_interval 0.5
