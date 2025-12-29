@@ -1,0 +1,49 @@
+version: '3.8'
+services:
+  redis-nodePort: # 实例定义（每台服务器运行3个实例）
+    image: core.harbor.domain:32388/public/redis:8.2.2-alpine
+    container_name: redis-nodePort
+    restart: always
+    network_mode: host
+    volumes:
+      - ./data:/data
+    command: >
+      redis-server
+      --port nodePort
+      --requirepass hgrica1@
+      --masterauth hgrica1@
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 15000
+      --cluster-announce-ip nodeIP
+      --cluster-announce-port nodePort
+      --cluster-announce-bus-port 1nodePort
+      --appendonly yes
+      --aof-use-rdb-preamble yes
+      --appendfsync everysec
+      --auto-aof-rewrite-percentage 100
+      --auto-aof-rewrite-min-size 64mb
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --maxmemory 8GB
+      --maxmemory-policy volatile-lru
+      --tcp-backlog 10240
+      --cluster-replica-validity-factor 10
+      --repl-timeout 60
+      --timeout 300
+      --repl-backlog-size 128mb
+      --cluster-require-full-coverage no
+      --protected-mode no
+      --daemonize no
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: '8GB'
+
+# 检查集群状态: cluster nodes
+# 检查集群信息: cluster info
+# 7001,7002,7003
+# 7004,7005,7006
+# 7007,7008,7009
