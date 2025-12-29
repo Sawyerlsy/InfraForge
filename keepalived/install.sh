@@ -164,8 +164,8 @@ function user_config() {
     read -p "请输入虚拟路由器ID (MASTER和BACKUP须保持一致,默认:51): " VIRTUAL_ROUTER_ID
     VIRTUAL_ROUTER_ID=${VIRTUAL_ROUTER_ID:-51}
 
-    read -s -p "请输入VRRP认证密码 (默认:@Sy3@lsy): " AUTH_PASS
-    AUTH_PASS=${AUTH_PASS:-@Sy3@lsy}
+    read -s -p "请输入VRRP认证密码 (默认:sawyerlsy): " AUTH_PASS
+    AUTH_PASS=${AUTH_PASS:-sawyerlsy}
     echo  # 换行
 
     INTERFACE=$(detect_interface)
@@ -361,12 +361,13 @@ vrrp_instance VI_1 {
     #一定要选择稳定的网卡端口来发送，这里相当于heartbeat的心跳端口，如果没有设置那么就用默认的绑定的网卡的IP，也就是interface指定的IP地址
     #mcast_src_ip 192.168.10.101
 
-    # 本机 IP.当VRRP 心跳通信失败时，当交换机禁用组播（如 ARP 广播限制)导致通信失败时,可启用启用单播通信
+    # 本机 IP.当VRRP 心跳通信失败时，或者交换机禁用组播（如 ARP 广播限制)导致通信失败时,或者对安全性要求高、稳定性要求高、网络要求高的情况下，可启用启用单播通信
     #unicast_src_ip 10.194.68.221
 
     # 对端 IP
     #unicast_peer {
     #  10.194.68.222
+    #  10.194.68.223
     #}
 
     #虚拟路由标识，这个标识是一个数字，同一个vrrp实例使用唯一的标识。即同一vrrp_instance下，MASTER和BACKUP必须是一致的

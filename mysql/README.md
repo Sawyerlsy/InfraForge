@@ -31,3 +31,19 @@ ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '你的�
 FLUSH PRIVILEGES;
 SELECT user, host, plugin FROM mysql.user WHERE user = 'root';
 ```
+
+
+
+-- 查看binlog占用空间
+SHOW BINARY LOGS;
+
+-- 立即清理7天前的binlog（根据需求调整天数）
+PURGE BINARY LOGS BEFORE DATE_SUB(NOW(), INTERVAL 7 DAY);
+
+-- 或清理到指定文件
+PURGE BINARY LOGS TO 'binlog.000150';
+
+-- 查看binlog保留时间（默认30天，可调整为7天）
+SHOW VARIABLES LIKE 'binlog_expire_logs_seconds';
+-- 临时设置为7天（604800秒）
+SET GLOBAL binlog_expire_logs_seconds = 604800;
