@@ -11,7 +11,7 @@ modules:
 #      fail_if_body_not_matches_regexp: # 校验响应体（可选）
 #        - "status:OK"
 #      tls_config:
-#        insecure_skip_verify: false  # 生产必须验证证书 [4](@ref)
+#        insecure_skip_verify: false  # 生产必须验证证书
 #        min_version: "TLS12"         # 强制 TLS 1.2+
 
   # ICMP 探测模块（对应 prometheus.yml 中的 icmp）
@@ -55,7 +55,7 @@ modules:
         fail_if_not_matches_regexp:
           - "\\d+\\.\\d+\\.\\d+\\.\\d+"  # IPv4 格式
 
-  # HTTPS 证书监控（独立模块）[4](@ref)
+  # HTTPS 证书监控（独立模块）
   https_cert_check:
     prober: http
     timeout: 15s  # 证书检查需更长时间

@@ -86,7 +86,7 @@ function disable_selinux() {
 function check_firewall() {
     if systemctl is-active firewalld --quiet; then
         echo -e "\n🔥 检测到防火墙(firewalld)正在运行！"
-        echo "警告：防火墙可能阻止VRRP协议(IP协议号112)，导致Keepalived主备通信失败[4](@ref)"
+        echo "警告：防火墙可能阻止VRRP协议(IP协议号112)，导致Keepalived主备通信失败"
 
         while true; do
             read -p "请选择操作:

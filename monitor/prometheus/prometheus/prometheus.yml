@@ -1,6 +1,6 @@
 # 全局配置
 global:
-  scrape_interval: 15s      # 抓取间隔 [6,8](@ref)
+  scrape_interval: 15s      # 抓取间隔
   evaluation_interval: 15s  # 告警规则评估间隔
   scrape_timeout: 10s        # 单次抓取超时时间
 

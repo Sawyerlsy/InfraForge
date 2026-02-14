@@ -1,0 +1,36 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://10.194.65.135:3100/loki/api/v1/push
+    batchsize: 1048576     # 单批次最大1MB（减少小包网络传输）
+    batchwait: 1s          # 批次最大等待时间（平衡实时性与吞吐量）
+    timeout: 10s           # 网络请求超时（避免僵死连接）
+    backoff_config: # 失败重试策略（增强容错）
+      min_period: 500ms    # 最小重试间隔
+      max_period: 5m       # 最大重试间隔
+      max_retries: 10      # 最大重试次数
+#    basic_auth: # 基础认证
+#      username: "loki_user"
+#      password: "!secure_password!"
+
+# ===== 日志抓取任务配置 =====
+scrape_configs:
+  - job_name: docker-swarm-logs
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 15s
+
+    relabel_configs:
+      #只筛选nobody的服务
+      - source_labels: ['__meta_docker_container_label_com_docker_swarm_service_name']
+        regex: 'nobody.+'
+        action: keep
+
+      - source_labels: ['__meta_docker_container_label_com_docker_swarm_service_name']
+        target_label: 'duty_service'
+        action: replace

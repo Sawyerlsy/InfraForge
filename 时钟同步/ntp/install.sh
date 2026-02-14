@@ -141,8 +141,8 @@ $(for srv in "${SERVERS[@]}"; do
 done)
 
 # ==== 安全加固 ====
-tinker panic 0  # 避免时间偏差过大时服务崩溃[6](@ref)
-disable monitor  # 关闭监控模式防攻击[3](@ref)
+tinker panic 0  # 避免时间偏差过大时服务崩溃
+disable monitor  # 关闭监控模式防攻击
 
 # ==== 日志配置 ====
 logfile $LOG_DIR/ntpd.log
@@ -180,7 +180,7 @@ EOF
 configure_firewall() {
     log "步骤5/6: 配置防火墙..."
 
-    # firewalld处理[3](@ref)
+    # firewalld处理
     if systemctl is-active firewalld &>/dev/null; then
         firewall-cmd --add-service=ntp --permanent >/dev/null
         firewall-cmd --reload >/dev/null
@@ -188,11 +188,11 @@ configure_firewall() {
         return
     fi
 
-    # iptables处理（增加规则保存）[3](@ref)
+    # iptables处理（增加规则保存）
     if command -v iptables &>/dev/null; then
         if ! iptables -C INPUT -p udp --dport 123 -j ACCEPT &>/dev/null; then
             iptables -A INPUT -p udp --dport 123 -j ACCEPT
-            # 持久化规则[3](@ref)
+            # 持久化规则
             if command -v iptables-save &>/dev/null; then
                 mkdir -p /etc/sysconfig
                 iptables-save > /etc/sysconfig/iptables
@@ -217,7 +217,7 @@ start_service() {
         systemctl enable --now ntpd && log "✅ 服务已启用"
     fi
 
-    # 等待服务就绪（修复误判）[2](@ref)
+    # 等待服务就绪（修复误判）
     local wait_sec=15
     while ! systemctl is-active ntpd --quiet && ((wait_sec>0)); do
         sleep 1
@@ -234,7 +234,7 @@ verify_service() {
     log "健康验证..."
     local attempts=5 interval=5
 
-    # 状态检测（使用退出码而非输出）[2](@ref)
+    # 状态检测（使用退出码而非输出）
     if ! systemctl is-active ntpd --quiet; then
         error_exit "服务未运行" 8
     fi
@@ -272,7 +272,7 @@ show_summary() {
   时间源    : ${SERVERS[*]}
 
 ▶ 运维指南:
-  强制同步  : ntpdate -u $primary_ip  # 使用纯净地址[5](@ref)
+  强制同步  : ntpdate -u $primary_ip  # 使用纯净地址
   状态检查  : ntpq -pn
   日志跟踪  : tail -f $LOG_DIR/ntpd.log
 

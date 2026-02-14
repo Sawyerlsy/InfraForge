@@ -45,9 +45,6 @@ services:
       - SERVER_SERVLET_CONTEXT_PATH=/dispatch
     networks:
       - xxl-network
-    extra_hosts:
-      - "nas:172.31.0.27"
-      - "production2:172.31.0.26"
 
 # 使用外部已定义好的网络,此处使用自带的host网络
 networks:

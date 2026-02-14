@@ -5,6 +5,7 @@ services:
     image: grafana/loki:3.5
     ports:
       - "3100:3100"
+      - "9096:9096"
     command: -config.file=/etc/loki/config.yml -target=all
     volumes:
       - ./config:/etc/loki

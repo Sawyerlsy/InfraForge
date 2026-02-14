@@ -7,7 +7,7 @@ positions:
 
 clients:
   - url: http://10.194.68.225:3100/loki/api/v1/push
-    batchsize: 1048576     # 单批次最大1MB（减少小包网络传输）[1](@ref)
+    batchsize: 1048576     # 单批次最大1MB（减少小包网络传输）
     batchwait: 1s          # 批次最大等待时间（平衡实时性与吞吐量）
     timeout: 10s           # 网络请求超时（避免僵死连接）
     backoff_config: # 失败重试策略（增强容错）
