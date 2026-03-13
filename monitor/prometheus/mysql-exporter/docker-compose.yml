@@ -7,7 +7,7 @@ services:
     ports:
       - "9104:9104"
     volumes:
-      - ./conf/my.cnf:/.my.cnf  # 挂载配置文件到根目录
+      - ./conf/.my.cnf:/.my.cnf  # 挂载配置文件到根目录
     deploy:
       resources:
         limits:

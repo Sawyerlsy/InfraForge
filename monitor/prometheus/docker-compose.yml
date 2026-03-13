@@ -27,20 +27,6 @@ services:
     networks:
       - monitor
 
-  redis-exporter: # Redis集群监控
-    image: oliver006/redis_exporter:v1.55.0
-    container_name: redis-exporter
-    restart: always
-    ports:
-      - "9121:9121"
-    environment:
-      # 指定所有集群节点（逗号分隔）
-      REDIS_ADDR: "172.31.0.14:6391,172.31.0.14:6392,172.31.0.14:6393,172.31.0.15:6394,172.31.0.15:6395,172.31.0.15:6396,172.31.0.16:6397,172.31.0.16:6398,172.31.0.16:6399"
-      # 若集群有密码，需添加
-      REDIS_PASSWORD: "hgrica1@"
-    networks:
-      - monitor
-
   kafka-exporter:
     image: danielqsj/kafka-exporter:v1.9.0
     container_name: kafka-exporter
@@ -71,3 +57,7 @@ services:
 networks:
   monitor:
     name: monitor
+
+
+# mkdir -p prometheus && chmod -R 777 prometheus
+# docker-compose --compatibility up -d

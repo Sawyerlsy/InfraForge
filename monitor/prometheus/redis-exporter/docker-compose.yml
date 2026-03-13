@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  redis-exporter: # Redis集群监控
+    image: oliver006/redis_exporter:v1.55.0
+    container_name: redis-exporter
+    restart: always
+    ports:
+      - "9121:9121"
+    environment:
+      # 指定所有集群节点（逗号分隔）
+      REDIS_ADDR: "10.88.218.9:6391,10.88.218.9:6392,10.88.218.9:6393,10.88.218.10:6394,10.88.218.10:6395,10.88.218.10:6396,10.88.218.11:6397,10.88.218.11:6398,10.88.218.11:6399"
+      # 若集群有密码，需添加
+      REDIS_PASSWORD: "hgrica1@"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 200M
+# docker-compose --compatibility up -d
