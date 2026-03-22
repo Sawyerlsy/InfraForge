@@ -11,6 +11,7 @@ mkdir -p chrony-offline/centos && cd chrony-offline/centos
 
 # 步骤 3：下载 chrony 及其所有依赖包
 # yumdownloader --resolve --destdir=/opt/ansible_offline ansible
+# repotrack chrony
 yumdownloader --resolve chrony
 # 说明：
 # --resolve 参数是核心，它会自动分析并下载 chrony 软件运行所需的所有依赖包。

@@ -524,6 +524,15 @@ redis-cli -a hgrica1@ --cluster add-node 10.194.68.223:7003 10.194.68.224:7004 -
 redis-cli -a hgrica1@ -h 10.194.68.224 -p 7004 CLUSTER NODES | grep 7003
 ```
 
+##### 9.11、修复断电导致的文件损坏
+```shell
+echo "y" | docker run -i --rm \
+  --entrypoint redis-check-aof \
+  -v /root/app/redis-cluster/redis-6393/data:/data \
+  core.harbor.domain:32388/public/redis:8.2.2-alpine \
+  --fix /data/appendonlydir/appendonly.aof.4.incr.aof
+```
+
 
 ### 10、注意事项
 #### 10.1、reids节点宕机处理

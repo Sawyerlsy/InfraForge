@@ -1,0 +1,103 @@
+# 全局配置
+global:
+  scrape_interval: 15s      # 抓取间隔
+  evaluation_interval: 15s  # 告警规则评估间隔
+  scrape_timeout: 10s        # 单次抓取超时时间
+
+scrape_configs:
+  # 监控Prometheus自身
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: [ 'localhost:9090' ]
+
+  # 监控Node资源（服务器指标）每个节点都要部署一个node-exporter
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets:
+         - 10.88.218.5:9100
+         - 10.88.218.6:9100
+         - 10.88.218.7:9100
+         - 10.88.218.8:9100
+         - 10.88.218.9:9100
+         - 10.88.218.10:9100
+         - 10.88.218.11:9100
+         - 10.88.218.12:9100
+         - 10.88.218.13:9100
+         - 10.88.218.36:9100
+         - 10.88.218.49:9100
+         - 10.88.218.14:9100
+         - 10.88.218.50:9100
+         - 10.88.218.39:9100
+         - 10.88.218.51:9100
+
+  # 监控Redis集群
+  - job_name: 'redis'
+    static_configs:
+      - targets:
+          - 10.88.218.9:6391
+          - 10.88.218.9:6392
+          - 10.88.218.9:6393
+          - 10.88.218.10:6394
+          - 10.88.218.10:6395
+          - 10.88.218.10:6396
+          - 10.88.218.11:6397
+          - 10.88.218.11:6398
+          - 10.88.218.11:6399
+    metrics_path: /scrape
+    relabel_configs:
+      - source_labels: [ __address__ ]
+        target_label: __param_target
+      - source_labels: [ __param_target ]
+        target_label: instance
+      - target_label: __address__
+        replacement: 10.88.218.8:9121 # 指向Exporter实际主机
+      - source_labels: [ __param_target ]  # 添加角色标签（需配合Exporter自动发现）
+        regex: (.*)
+        target_label: redis_node
+
+  # 监控MySQL
+  - job_name: 'mysql' # 建议每台mysql安装一个mysql exporter
+    static_configs:
+      - targets: [ '10.88.218.12:9104','10.88.218.13:9104' ]
+    metrics_path: /metrics  # 默认路径
+
+  # Nacos 集群监控
+  - job_name: 'nacos'
+    metrics_path: '/nacos/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.88.218.9:8848','10.88.218.10:8848','10.88.218.11:8848' ]
+
+  # SpringCloud 微服务监控
+  - job_name: 'vs-param'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.88.218.36:8001','10.88.218.49:8001' ]
+  - job_name: 'vs-list'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.88.218.36:8002','10.88.218.49:8002' ]
+  - job_name: 'vs-pasm'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.88.218.36:8003','10.88.218.49:8003' ]
+  - job_name: 'vs-charge'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.88.218.36:8004','10.88.218.49:8004' ]
+  - job_name: 'vs-trade'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.88.218.36:8005','10.88.218.49:8005' ]
+  - job_name: 'vs-upload'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.88.218.36:8006','10.88.218.49:8006' ]
+  - job_name: 'vs-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.88.218.36:8000','10.88.218.49:8000' ]
+  - job_name: 'vs-log'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ '10.88.218.36:8008','10.88.218.49:8008']
+
