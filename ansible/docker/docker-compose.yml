@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  semaphore:
+    image: semaphoreui/semaphore:v2.17.35-ansible2.16.5
+    container_name: semaphore
+    privileged: true
+    user: "0"
+    restart: always
+    ports:
+      - 3001:3000
+    environment:
+      SEMAPHORE_DB_DIALECT: sqlite
+      SEMAPHORE_ADMIN: admin
+      SEMAPHORE_ADMIN_PASSWORD: hgrica1@
+      SEMAPHORE_ADMIN_NAME: admin
+      SEMAPHORE_ADMIN_EMAIL: admin@localhost
+    volumes:
+      - ./data:/var/lib/semaphore
+      - ./conf:/etc/semaphore
+      - ./tmp:/tmp/semaphore
+      - ./ansible:/ansible
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "300m"
+        max-file: "3"

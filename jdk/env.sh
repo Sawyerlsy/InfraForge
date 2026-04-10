@@ -1,0 +1,11 @@
+#JDK8
+JAVA_HOME=/opt/sources/jdk1.8.0_144
+JRE_HOME=$JAVA_HOME/jre
+PATH=$PATH:$JAVA_HOME/bin:$JRE_HOME/bin
+CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib
+export JAVA_HOME JRE_HOME PATH CLASSPATH
+
+#JDK21
+JAVA_HOME=/opt/sources/jdk-21.0.10+7
+PATH=$JAVA_HOME/bin:$PATH
+export JAVA_HOME PATH
