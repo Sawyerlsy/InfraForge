@@ -18,9 +18,10 @@ services:
       - ./data:/var/lib/semaphore
       - ./conf:/etc/semaphore
       - ./tmp:/tmp/semaphore
-      - ./ansible:/ansible
+      - ./resources:/root/app
     logging:
       driver: "json-file"
       options:
-        max-size: "300m"
-        max-file: "3"
+        max-size: "20m"  # 每个日志文件最大20MB
+        max-file: "10"   # 轮转保留10个文件，总计约200MB
+        compress: "true" # 启用压缩，节省空间（可选）
