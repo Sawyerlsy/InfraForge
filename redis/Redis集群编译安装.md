@@ -533,6 +533,10 @@ echo "y" | docker run -i --rm \
   --fix /data/appendonlydir/appendonly.aof.4.incr.aof
 ```
 
+### 9.12、调整从节点的主节点
+```
+redis-cli -a hgrica1@ -h 10.194.68.82 -p 6392 cluster replicate 5c168a54eeff519c45dc037b6045ddba9c2ec930
+```
 
 ### 10、注意事项
 #### 10.1、reids节点宕机处理

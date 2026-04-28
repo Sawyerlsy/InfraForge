@@ -9,7 +9,7 @@ DEFAULT_SERVICES=("gateway" "param" "charge" "list" "trade" "psam" "upload" "log
 
 show_help() {
     cat << EOF
-容器镜像导出工具
+容器镜像导出工具（gzip 压缩）
 用法: $0 [选项]
 示例:
   $0 -p virtual-station-rebuild-hebei -v 1301.2508.2
@@ -23,6 +23,7 @@ show_help() {
   -h  显示此帮助信息
 
 默认导出目录: 版本号目录 (如: $DEFAULT_VERSION/)
+导出文件为 .tar.gz 格式，已自动压缩。
 EOF
 }
 
@@ -58,7 +59,7 @@ fi
 OUTPUT_DIR="$VERSION"
 
 echo "=========================================="
-echo "开始导出镜像"
+echo "开始导出镜像（gzip 压缩）"
 echo "项目名称:    $PROJECT"
 echo "镜像版本:    $VERSION"
 echo "仓库地址:    $REGISTRY"
@@ -70,16 +71,17 @@ echo "=========================================="
 mkdir -p "$OUTPUT_DIR"
 cd "$OUTPUT_DIR" || exit
 
-# 导出镜像
+# 导出并压缩镜像
 FAILURES=0
 for SERVICE in "${SERVICES[@]}"; do
     IMAGE_NAME="$REGISTRY/$PROJECT/virtual-station-$SERVICE:$VERSION"
-    OUTPUT_FILE="${SERVICE}-${VERSION}.tar"
+    OUTPUT_FILE="${SERVICE}-${VERSION}.tar.gz"
 
-    echo "正在导出: $SERVICE"
+    echo "正在导出并压缩: $SERVICE"
     echo "镜像: $IMAGE_NAME"
 
-    if docker save "$IMAGE_NAME" > "$OUTPUT_FILE" 2>/dev/null; then
+    # 使用管道：docker save -> gzip -> 输出文件
+    if docker save "$IMAGE_NAME" | gzip > "$OUTPUT_FILE"; then
         FILE_SIZE=$(du -h "$OUTPUT_FILE" | cut -f1)
         echo "✓ 导出成功: $OUTPUT_FILE ($FILE_SIZE)"
     else

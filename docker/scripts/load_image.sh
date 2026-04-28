@@ -6,7 +6,7 @@ set -euo pipefail
 ###############################################################################
 readonly DEPLOY_DIR="."
 readonly HARBOR_DOMAIN="core.harbor.domain:32388"
-readonly DEFAULT_HARBOR_REGISTRY="${HARBOR_DOMAIN}/virtual-station-rebuild"
+readonly DEFAULT_HARBOR_REGISTRY="${HARBOR_DOMAIN}/virtual-station"
 readonly DEBUG="true"
 readonly PUSH_IMAGES="true"  # 是否推送镜像到私有仓库
 readonly HARBOR_USERNAME="${HARBOR_USERNAME:-admin}"  # Harbor用户名（环境变量）
@@ -394,24 +394,27 @@ select_registry_prefix() {
 #                             镜像处理
 ###############################################################################
 
-# 解析tar文件名，提取服务名和版本
+# 解析tar/tar.gz文件名，提取服务名和版本（同时支持 .tar 和 .tar.gz）
 parse_tar_filename() {
     local tar_file="$1"
     local filename
-    filename=$(basename "${tar_file}" .tar)
+    filename=$(basename "${tar_file}")
 
     # 假设格式: <service>-<version>.tar
     # 或: <prefix>-<service>-<version>.tar
+    # 或: <prefix>-<service>-<version>.tar.gz
+
+    # 先去掉 .tar.gz，再去掉 .tar
+    filename="${filename%.tar.gz}"
+    filename="${filename%.tar}"
+
     local service_name
     local version
-
-    # 提取版本（最后一个破折号后的部分）
+    # 提取版本（最后一个 - 后面的部分）
     version="${filename##*-}"
-
-    # 提取服务名（移除版本部分）
+    # 提取服务名（去掉版本部分）
     service_name="${filename%-${version}}"
 
-    # 不再自动添加前缀，保留原始服务名
     echo "${service_name}|${version}"
 }
 
@@ -464,7 +467,7 @@ push_image_to_harbor() {
     return 1
 }
 
-# 导入单个镜像tar文件
+# 导入单个镜像tar/tar.gz文件
 import_single_image() {
     local tar_file="$1"
     local service_name="$2"
@@ -494,7 +497,7 @@ import_single_image() {
     # 构建新标签
     local new_image_tag="${harbor_registry}/${full_service_name}:${version}"
 
-    # 步骤3: 导入镜像
+    # 步骤3: 导入镜像（docker load 原生支持 .tar 和 .tar.gz）
     local load_output="${TEMP_DIR}/load_output_${full_service_name}.txt"
     local load_status="success"
 
@@ -629,17 +632,17 @@ import_single_image() {
 #                             批量处理
 ###############################################################################
 
-# 批量处理tar文件
+# 批量处理tar/tar.gz文件
 batch_process_tar_files() {
     local success_count=0
     local fail_count=0
 
-    # 查找tar文件
+    # 查找 .tar 和 .tar.gz 文件
     local -a tar_files
-    mapfile -t tar_files < <(find "${DEPLOY_DIR}" -maxdepth 1 -name "*.tar" -type f | sort)
+    mapfile -t tar_files < <(find "${DEPLOY_DIR}" -maxdepth 1 \( -name "*.tar" -o -name "*.tar.gz" \) -type f | sort)
 
     if [[ ${#tar_files[@]} -eq 0 ]]; then
-        log_error "在 ${DEPLOY_DIR} 中未找到tar文件"
+        log_error "在 ${DEPLOY_DIR} 中未找到 .tar 或 .tar.gz 文件"
         return 1
     fi
 
@@ -869,7 +872,7 @@ show_processing_results() {
 
 main() {
     # 显示启动信息
-    log_section ">>>>> Docker镜像导入工具"
+    log_section ">>>>> Docker镜像导入工具（支持 .tar / .tar.gz）"
     log_info "工作目录: $(pwd)"
     log_info "Harbor域名: ${HARBOR_DOMAIN}"
     log_info "服务前缀: ${SERVICE_PREFIX}"
@@ -879,7 +882,7 @@ main() {
     # 环境检查
     check_prerequisites
 
-    # 批量处理tar文件
+    # 批量处理tar/tar.gz文件
     if ! batch_process_tar_files; then
         log_error "部分镜像导入失败，请检查错误信息"
         # 继续显示已成功导入的镜像

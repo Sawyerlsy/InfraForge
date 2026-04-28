@@ -132,6 +132,12 @@ sudo chown root:docker /var/run/docker.sock
 newgrp docker
 ```
 
+#### 9、常用命令
+##### 9.1 查看stack完整服务信息
+```
+docker stack ps virtual-station --no-trunc
+```
+
 
 
 
