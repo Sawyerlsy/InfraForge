@@ -42,6 +42,7 @@ services:
           memory: '2GB'
 
 # mkdir -p data && chmod -R 777 data
+# 修改IP
 # docker-compose --compatibility up -d
 # KRaft模式部署,不依赖zookeeper
 
