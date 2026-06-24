@@ -15,7 +15,7 @@ services:
       --max_connections=1000
     environment:
       - TZ=Asia/Shanghai
-      - MYSQL_ROOT_PASSWORD=hgrica1@
+      - MYSQL_ROOT_PASSWORD=Hgrica1@
     volumes:
       - ./data:/var/lib/mysql
     ports:
@@ -23,7 +23,7 @@ services:
     networks:
       - mysql_net
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-phgrica1@" ]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pHgrica1@" ]
       interval: 30s
       timeout: 10s
       retries: 3

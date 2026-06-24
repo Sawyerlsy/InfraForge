@@ -1,0 +1,47 @@
+version: '3.8'
+services:
+  emqx:
+    image: emqx/emqx:5.6.1
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_RESOURCE
+    container_name: emqx
+    environment:
+      - EMQX_NODE_NAME=emqx@10.194.65.133  #节点名称，格式：emqx@服务器IP
+      - EMQX_NODE__COOKIE=emqx_cluster_cookie_sy  # EMQX 节点通信密钥
+      - EMQX_CLUSTER__DISCOVERY_STRATEGY=static  # 基于 static 节点列表自动集群
+      - EMQX_CLUSTER__STATIC__SEEDS=[emqx@10.194.65.133,emqx@10.194.65.134,emqx@10.194.65.135]  # 集群所有节点列表
+      - EMQX_DASHBOARD__DEFAULT_USERNAME=admin # 制台默认用户名
+      - EMQX_DASHBOARD__DEFAULT_PASSWORD=HGrica1_2de10 # 制台默认密码
+    ports:
+      - 1883:1883     # TCP端口
+      - 8083:8083     # WebSocket端口
+      - 8084:8084     # 安全 WebSocket（WSS）端口
+      - 8883:8883     # SSL端口
+      - 18083:18083   # 控制台端口
+      - 4370:4370     # Erlang 分布式传输端口
+      - 5369:5369     # 集群 RPC 端口
+    restart: always
+    volumes:
+      - ./data:/opt/emqx/data
+      - ./log:/opt/emqx/log
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+
+# 创建目录并授权
+# mkdir -p data && chmod -R 777 data
+# mkdir -p log && chmod -R 777 log
+# 启动
+# docker-compose --compatibility up -d
+# 验证集群状态
+# docker exec -it emqx /bin/bash
+# emqx_ctl cluster status
+
+# 浏览器访问：http://IP:18083

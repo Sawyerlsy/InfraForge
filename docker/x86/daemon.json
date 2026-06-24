@@ -1,0 +1,10 @@
+{
+"registry-mirrors": ["https://registry.docker-cn.com"],
+"insecure-registries": [ "core.harbor.domain:32388"],
+"log-driver": "json-file",
+  "log-opts": {
+    "max-size": "20m",
+    "max-file": "10"
+  },
+  "seccomp-profile" : "/etc/docker/seccomp.json"
+}

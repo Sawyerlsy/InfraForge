@@ -18,7 +18,7 @@ jdbc:mysql://你的服务器地址:3306/数据库名?useSSL=true&serverTimezone=
 - 方案三：修改用户认证插件
 ```shell
 # 登录mysql
-mysql mysql -uroot -p
+mysql -uroot -p
 
 # 查看 root 用户绑定在哪些主机上
 SELECT user, host, plugin FROM mysql.user WHERE user = 'root';
