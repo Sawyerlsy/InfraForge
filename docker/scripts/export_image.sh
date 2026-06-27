@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # 默认配置
-DEFAULT_PROJECT="virtual-station-rebuild-hebei"
+DEFAULT_PROJECT="virtual-station-rebuild-guangdong"
 DEFAULT_VERSION="1301.2508.2"
 DEFAULT_REGISTRY="core.harbor.domain:32388"
 DEFAULT_SERVICES=("gateway" "param" "charge" "list" "trade" "psam" "upload" "log")

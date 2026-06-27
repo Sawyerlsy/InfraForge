@@ -1,0 +1,22 @@
+# ----------------------
+# mqtt集群
+# ----------------------
+upstream mqtt_servers {
+    server 10.194.68.133:1883 max_fails=2 fail_timeout=10s;
+    server 10.194.68.134:1883 max_fails=2 fail_timeout=10s backup;
+    server 10.194.68.135:1883 max_fails=2 fail_timeout=10s backup;
+}
+
+server {
+    listen 1883;
+    proxy_pass mqtt_servers;
+
+    # 启用此项时，对应后端监听器也需要启用 proxy_protocol
+    # proxy_protocol on;
+    proxy_connect_timeout 10s;
+
+    # 默认心跳时间为 10 分钟
+    # proxy_timeout 1800s;
+    proxy_buffer_size 3M;
+    tcp_nodelay on;
+}

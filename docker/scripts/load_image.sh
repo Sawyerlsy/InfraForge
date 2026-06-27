@@ -6,11 +6,11 @@ set -euo pipefail
 ###############################################################################
 readonly DEPLOY_DIR="."
 readonly HARBOR_DOMAIN="core.harbor.domain:32388"
-readonly DEFAULT_HARBOR_REGISTRY="${HARBOR_DOMAIN}/virtual-station"
+readonly DEFAULT_HARBOR_REGISTRY="${HARBOR_DOMAIN}/virtual-station-guangdong"
 readonly DEBUG="true"
 readonly PUSH_IMAGES="true"  # 是否推送镜像到私有仓库
 readonly HARBOR_USERNAME="${HARBOR_USERNAME:-admin}"  # Harbor用户名（环境变量）
-readonly HARBOR_PASSWORD="${HARBOR_PASSWORD:-Harbor@2024}"  # Harbor密码（环境变量）
+readonly HARBOR_PASSWORD="${HARBOR_PASSWORD:-HGrica1_2de10}"  # Harbor密码（环境变量）
 
 # 服务名前缀配置（可通过环境变量覆盖）
 readonly SERVICE_PREFIX="${SERVICE_PREFIX:-virtual-station-}"
