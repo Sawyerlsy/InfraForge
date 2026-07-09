@@ -1,5 +1,5 @@
 # ----------------------
-# mqtt集群
+# mqtt集群：当前配置经验证无效
 # ----------------------
 upstream mqtt_servers {
     server 10.194.68.133:1883 max_fails=2 fail_timeout=10s;
