@@ -25,6 +25,7 @@ services:
       - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=*
       - NACOS_NAMING_CLIENT_EXPIRED_TIME=45000 # 客户端过期时间，不能小于元数据过期时间
       - NACOS_NAMING_CLEAN_EXPIREDMETADATA_EXPIREDTIME=45000 # 元数据过期时间
+      #- NACOS_CUSTOM_ENVIRONMENT_ENABLED=true # 如果要开启密码加密功能(base64加密)，需要开启此配置
     ports:
       - "8848:8848"   # HTTP
       - "7848:7848"   # Raft
@@ -32,3 +33,4 @@ services:
       - "9849:9849"   # Server gRPC
     volumes:
       - ./logs:/home/nacos/logs
+      - ./plugins:/home/nacos/plugins

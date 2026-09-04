@@ -3,6 +3,7 @@ version: '3.8'
 services:
   portainer_agent:
     image: portainer/agent:2.33.2
+    restart: always
     networks:
       - portainer_agent_network
     ports:
