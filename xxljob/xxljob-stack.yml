@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   xxl-job-admin:
-    image: sawyerlsy/xxl-job-admin:v2.3.0-local
+    image: sawyerlsy/xxl-job-admin:v2.3.1-local
     deploy:
       mode: global # 用于指定是以副本模式replicated(默认)启动还是全局模式global，如果是全局模式，类似于开始于k8s中的DaemonSet，会在每个节点上启动且只启动一个服务
       placement: # 限制容器部署的节点

@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   xxl-job-admin:
-    image: sawyerlsy/xxl-job-admin:v2.3.0-local
+    image: sawyerlsy/xxl-job-admin:v2.3.1-local
     security_opt:
       - seccomp:unconfined  # 解除线程创建限制
     cap_add:
