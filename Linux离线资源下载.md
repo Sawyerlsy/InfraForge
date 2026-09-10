@@ -1,5 +1,6 @@
 ## 一、CentOS
-#### 1、在联网的“制备机”上准备离线安装包 (RPM)
+
+### 1、在联网的"制备机"上准备离线安装包 (RPM)
 ```shell
 # 步骤 1：安装必要的下载工具
 sudo yum install -y yum-utils
@@ -21,7 +22,7 @@ yumdownloader --resolve chrony
 tar -czf ../chrony-offline-centos.tar.gz .
 # 说明：将当前目录所有文件打包成一个压缩文件，便于复制到离线环境。
 ```
-#### 2、在离线的“目标机”上安装与配置
+### 2、在离线的"目标机"上安装与配置
 ```shell
 # 步骤 1：解压离线安装包
 cd /tmp
@@ -61,7 +62,8 @@ sudo systemctl status chronyd
 # 说明：确认服务状态为 “active (running)”。按 `q` 键可退出状态视图。
 ```
 ## 二、Ubuntu
-#### 1、在联网的“制备机”上准备离线安装包 (DEB)
+
+### 1、在联网的"制备机"上准备离线安装包 (DEB)
 ```shell
 # 步骤 1：更新软件包列表
 sudo apt-get update
@@ -83,7 +85,7 @@ apt-get download $(apt-cache depends --recurse --no-recommends --no-suggests --n
 tar -czf ../chrony-offline-ubuntu.tar.gz .
 # 说明：将当前目录所有 .deb 文件打包。
 ```
-#### 2、在离线的“目标机”上安装与配置
+### 2、在离线的"目标机"上安装与配置
 ```shell
 # 步骤 1：解压离线安装包
 cd /tmp
