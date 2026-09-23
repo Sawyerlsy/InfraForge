@@ -39,7 +39,7 @@ services:
       - TZ=Asia/Shanghai
       - SPRING_DATASOURCE_URL=jdbc:mysql://172.31.0.100:3306/vs_xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
       - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=hgrica1@
+      - SPRING_DATASOURCE_PASSWORD=ENC(LlAQY7gVdo7bGt0JSba6O4UCigWlWJdj)
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
       - SERVER_PORT=9999
       - SERVER_SERVLET_CONTEXT_PATH=/dispatch

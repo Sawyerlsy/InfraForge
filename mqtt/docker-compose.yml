@@ -7,6 +7,7 @@ services:
     cap_add:
       - SYS_RESOURCE
     container_name: emqx
+    restart: always
     environment:
       - EMQX_NODE_NAME=emqx@10.194.65.133  #节点名称，格式：emqx@服务器IP
       - EMQX_NODE__COOKIE=emqx_cluster_cookie_sy  # EMQX 节点通信密钥
@@ -22,7 +23,6 @@ services:
       - 18083:18083   # 控制台端口
       - 4370:4370     # Erlang 分布式传输端口
       - 5369:5369     # 集群 RPC 端口
-    restart: always
     volumes:
       - ./data:/opt/emqx/data
       - ./log:/opt/emqx/log
