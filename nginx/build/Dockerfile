@@ -3,7 +3,7 @@ FROM debian:bookworm-slim AS builder
 
 # 时区配置
 ENV TZ=Asia/Shanghai
-ENV NGINX_VERSION=1.28.0
+ENV NGINX_VERSION=1.30.6
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # 安装编译依赖
@@ -74,7 +74,7 @@ RUN ./configure \
         --with-stream_ssl_module \
         --with-stream_ssl_preread_module \
         --add-module=/tmp/nginx_upstream_check_module-master \
-        --with-cc-opt='-g -O2 -ffile-prefix-map=/home/builder/debuild/nginx-1.28.0/debian/debuild-base/nginx-1.28.0=. -fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fPIC' \
+        --with-cc-opt='-g -O2 -ffile-prefix-map=/home/builder/debuild/nginx-1.30.6/debian/debuild-base/nginx-1.30.6=. -fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fPIC' \
         --with-ld-opt='-Wl,-z,relro -Wl,-z,now -Wl,--as-needed -pie' \
         && make -j$(nproc) \
         && make install \
